@@ -1,0 +1,776 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Poker Stack Logger</title>
+
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+  <style>
+    :root { --bg:#fff; --card:#fff; --bd:#e6e6e6; --muted:#666; --text:#111; --soft:#f6f6f6; }
+    body { font-family: -apple-system, system-ui, Segoe UI, Roboto, sans-serif; margin: 16px; background:var(--bg); color:var(--text); }
+    h1 { font-size: 18px; margin: 2px 0 12px; }
+    h2 { font-size: 14px; margin: 0 0 8px; color: #222; }
+    .card { border:1px solid var(--bd); border-radius: 14px; padding: 12px; margin: 12px 0; background:var(--card); }
+    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; }
+    label { font-size: 12px; color: #444; display:block; margin-bottom:4px; }
+    input, select, button, textarea { font-size: 16px; padding: 10px; border-radius: 12px; border:1px solid #cfcfcf; }
+    input { width: 160px; }
+    input.small { width: 120px; }
+    select { width: 200px; }
+    textarea { width: 100%; min-height: 72px; resize: vertical; }
+    button { border:0; cursor:pointer; }
+    .btn { padding: 12px 14px; border-radius: 12px; }
+    .btn-primary { background:#111; color:#fff; }
+    .btn-ghost { background: var(--soft); color:#111; border:1px solid var(--bd); }
+    .btn-danger { background:#ffecec; color:#111; border:1px solid #ffd0d0; }
+
+    .metrics { display:flex; gap:14px; flex-wrap:wrap; align-items:center; }
+    .metric { font-size: 13px; color:#333; }
+    .metric b { font-size: 20px; font-variant-numeric: tabular-nums; font-feature-settings:"tnum"; }
+    .big { font-size: 34px; font-weight: 850; letter-spacing: 0.4px; font-variant-numeric: tabular-nums; font-feature-settings:"tnum"; }
+    .mono { font-variant-numeric: tabular-nums; font-feature-settings:"tnum"; }
+    .hint { font-size: 12px; color: var(--muted); line-height: 1.45; }
+
+    .grid2 { display:grid; grid-template-columns: 1fr; gap: 10px; }
+    @media (min-width: 720px) { .grid2 { grid-template-columns: 1fr 1fr; } }
+
+    canvas { width: 100%; height: 220px; border-radius: 14px; background:#fafafa; border:1px solid #eee; }
+
+    table { width:100%; border-collapse: collapse; }
+    th, td { border-top:1px solid #eee; padding:10px 6px; font-size: 13px; vertical-align: top; }
+    th { text-align:left; color:#555; font-weight:600; position: sticky; top: 0; background: white; }
+    .pill { display:inline-block; padding: 2px 8px; border-radius: 999px; background: var(--soft); border:1px solid var(--bd); font-size: 12px; }
+    .right { text-align:right; }
+
+    .warn { background:#fff7e6; border:1px solid #ffe1a6; padding:10px 12px; border-radius:12px; }
+  </style>
+</head>
+<body>
+  <h1>Poker Stack Logger（自分用）</h1>
+
+  <div class="card">
+    <div class="row" style="justify-content: space-between; align-items:center;">
+      <div>
+        <div class="hint">現在Chips</div>
+        <div class="big mono" id="chipsBig">0</div>
+      </div>
+      <div class="metrics">
+        <div class="metric">vsBB：<b id="vsBB" class="mono">-</b></div>
+        <div class="metric">Dif Chips：<b id="difChips" class="mono">-</b></div>
+        <div class="metric">Num Behind：<b id="behind" class="mono">-</b></div>
+        <div class="metric">M Value：<b id="mValue" class="mono">-</b></div>
+      </div>
+    </div>
+    <div class="hint" style="margin-top:8px;">
+      Dif Chips = Chips − InitialChips − (BustedCount × InitialChips) ／ M = Chips ÷ (SB + BB + BB ante)
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>インプット</h2>
+
+    <div class="grid2">
+      <div class="row">
+        <div>
+          <label>Name（自由記述）</label>
+          <input id="name" placeholder="例）12/25 Xmasトナメ" />
+        </div>
+        <div>
+          <label>Chips（現在）</label>
+          <input id="chips" type="number" inputmode="numeric" min="0" step="1" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>Initial Chips（初期スタック）</label>
+          <input id="initial" class="small" type="number" inputmode="numeric" min="0" step="1" />
+        </div>
+        <div>
+          <label>飛んだ回数（Busted Count）</label>
+          <input id="busted" class="small" type="number" inputmode="numeric" min="0" step="1" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>SB</label>
+          <input id="sb" class="small" type="number" inputmode="numeric" min="0" step="1" />
+        </div>
+        <div>
+          <label>BB</label>
+          <input id="bb" class="small" type="number" inputmode="numeric" min="1" step="1" />
+        </div>
+        <div>
+          <label>BB ante</label>
+          <input id="bbante" class="small" type="number" inputmode="numeric" min="0" step="1" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>table MAX（2〜8）</label>
+          <input id="tableMax" class="small" type="number" inputmode="numeric" min="2" max="8" step="1" />
+        </div>
+        <div>
+          <label>Position（8人MAX想定）</label>
+          <select id="position">
+            <option>UTG</option>
+            <option>UTG+1</option>
+            <option>LJ</option>
+            <option>HJ</option>
+            <option>CO</option>
+            <option>BTN</option>
+            <option>SB</option>
+            <option>BB</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div style="height:10px"></div>
+
+    <div>
+      <label>メモ（何があって変動したか）</label>
+      <textarea id="memo" placeholder="例）BTNでAQsオールイン勝ち / SBでリスチ負け など"></textarea>
+    </div>
+
+    <div style="height:10px"></div>
+
+    <div class="row">
+      <div>
+        <label>増減単位（Chipsに応じて自動）</label>
+        <select id="step"></select>
+        <div class="hint" style="margin-top:4px;">Chipsに合わせて候補が自動更新されます</div>
+      </div>
+      <button class="btn btn-ghost" id="minus">−</button>
+      <button class="btn btn-ghost" id="plus">＋</button>
+
+      <div style="flex:1"></div>
+
+      <button class="btn btn-primary" id="record">記録（ログ追加）</button>
+      <button class="btn btn-ghost" id="undo">直近ログを削除</button>
+      <button class="btn btn-danger" id="clearAll">全消去</button>
+    </div>
+
+    <div class="hint" style="margin-top:8px;">
+      ※ 「記録」を押すと、現在状態＋メモがログに保存されます。<br>
+      ※ 例：初期600 / 1回飛び / 現在400 → Dif Chips = 400 − 600 − 600 = −800
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>推移グラフ（Chips と vsBB）</h2>
+    <canvas id="chart" width="1100" height="420"></canvas>
+    <div class="hint" style="margin-top:8px;">
+      横軸：Date+Time（ログ時刻）／ 左縦軸：Chips ／ 右縦軸：vsBB
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row" style="justify-content: space-between; align-items:center;">
+      <h2 style="margin:0;">アウトプット（ログ一覧）</h2>
+      <div class="pill">最新が上</div>
+    </div>
+
+    <div class="row" style="margin-top:8px;">
+      <button class="btn btn-primary" id="exportXlsx">Excelにエクスポート（ダウンロード）</button>
+      <div style="flex:1"></div>
+      <button class="btn btn-ghost" id="copyCsv">CSVをコピー（ログ一覧）</button>
+    </div>
+
+    <div class="warn hint" style="margin-top:10px;">
+      OneDriveへ“自動アップロード”は、ブラウザだけで任意アカウントに直接保存するには認証が必要です。<br>
+      対応策：Power Automateで「このURLに送ったファイルを自分のOneDriveに保存」するフローを作れば、アップロードも可能にできます。
+    </div>
+
+    <div style="overflow:auto; max-height: 420px; margin-top:10px;">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Date</th>
+            <th>Time</th>
+            <th class="right">Chips</th>
+            <th class="right">Initial</th>
+            <th class="right">Busted</th>
+            <th class="right">Dif Chips</th>
+            <th class="right">SB</th>
+            <th class="right">BB</th>
+            <th class="right">BB ante</th>
+            <th class="right">table MAX</th>
+            <th class="right">ratio vsBB</th>
+            <th>Position</th>
+            <th class="right">Num Behind</th>
+            <th class="right">M Value</th>
+            <th>Memo</th>
+          </tr>
+        </thead>
+        <tbody id="logBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+
+<script>
+(() => {
+  const LS_KEY = "poker_stack_logger_v4";
+
+  const POSITIONS = ["UTG","UTG+1","LJ","HJ","CO","BTN","SB","BB"]; // 8max想定（固定）
+  const el = (id) => document.getElementById(id);
+
+  const inputs = {
+    name: el("name"),
+    chips: el("chips"),
+    initial: el("initial"),
+    busted: el("busted"),
+    sb: el("sb"),
+    bb: el("bb"),
+    bbante: el("bbante"),
+    tableMax: el("tableMax"),
+    position: el("position"),
+    memo: el("memo"),
+    step: el("step"),
+  };
+
+  const ui = {
+    chipsBig: el("chipsBig"),
+    vsBB: el("vsBB"),
+    difChips: el("difChips"),
+    behind: el("behind"),
+    mValue: el("mValue"),
+    logBody: el("logBody"),
+    chart: el("chart"),
+    exportXlsx: el("exportXlsx"),
+    copyCsv: el("copyCsv"),
+  };
+
+  const btn = {
+    plus: el("plus"),
+    minus: el("minus"),
+    record: el("record"),
+    undo: el("undo"),
+    clearAll: el("clearAll"),
+  };
+
+  const ctx = ui.chart.getContext("2d");
+
+  const now = () => new Date();
+  const pad2 = (n) => String(n).padStart(2, "0");
+  const fmtDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+  const fmtTime = (d) => `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+
+  const fmtInt = (n) => (Number.isFinite(n) ? Math.round(n).toLocaleString("ja-JP") : "-");
+  const fmt1 = (n) => (Number.isFinite(n) ? (Math.round(n*10)/10).toFixed(1) : "-");
+
+  const defaultState = {
+    name: "",
+    chips: 10000,
+    initial: 10000,
+    busted: 0,
+    sb: 50,
+    bb: 100,
+    bbante: 0,
+    tableMax: 8,
+    position: "UTG",
+    memo: "",
+    step: 100,
+    stepOptions: [10,20,50,100,200,500],
+    logs: []
+  };
+
+  let state = load();
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (!raw) return structuredClone(defaultState);
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed.logs)) parsed.logs = [];
+      if (!Array.isArray(parsed.stepOptions) || parsed.stepOptions.length === 0) parsed.stepOptions = structuredClone(defaultState.stepOptions);
+      return { ...structuredClone(defaultState), ...parsed };
+    } catch {
+      return structuredClone(defaultState);
+    }
+  }
+
+  function save() {
+    localStorage.setItem(LS_KEY, JSON.stringify(state));
+  }
+
+  function numVal(input, fallback=0) {
+    const v = Number(input.value);
+    return Number.isFinite(v) ? v : fallback;
+  }
+
+  function clamp(n, min, max) {
+    return Math.min(max, Math.max(min, n));
+  }
+
+  function calcVsBB(chips, bb) {
+    return (bb > 0) ? (chips / bb) : NaN;
+  }
+
+  function calcDif(chips, initial, bustedCount) {
+    const ini = Math.max(0, initial || 0);
+    const bust = Math.max(0, Math.floor(bustedCount || 0));
+    return chips - ini - (bust * ini);
+  }
+
+  function calcBehind(position, tableMax) {
+    const idx = POSITIONS.indexOf(position);
+    if (idx < 0) return NaN;
+    const tm = clamp(Math.round(tableMax || 0), 2, 8);
+    return Math.max(0, (tm - 1) - idx);
+  }
+
+  function calcM(chips, sb, bb, bbante) {
+    const cost = (sb||0) + (bb||0) + (bbante||0);
+    return (cost > 0) ? (chips / cost) : NaN;
+  }
+
+  // ★ chipsに応じた「使いやすい増減単位」を6個作る
+  // 1/2/5系列で、chipsのだいたい1%〜50%あたりをカバーするイメージ
+  function buildStepOptions(chips) {
+    const c = Math.max(0, Math.floor(chips || 0));
+    // chipsが小さいときの最低候補
+    if (c <= 0) return [1,2,5,10,20,50];
+
+    // “基準値”を chips の約 5% に置く（ここが体感で使いやすい）
+    const target = Math.max(1, Math.floor(c * 0.05));
+
+    // targetの桁を決める
+    const pow = Math.pow(10, Math.floor(Math.log10(target)));
+    const mant = target / pow;
+
+    // 1/2/5のうち近いもの
+    let base;
+    if (mant < 1.5) base = 1;
+    else if (mant < 3.5) base = 2;
+    else base = 5;
+
+    const step0 = base * pow;
+
+    // step0を中心に、下に2つ、上に3つで計6つ
+    const seq = [step0/5, step0/2, step0, step0*2, step0*5, step0*10]
+      .map(x => Math.max(1, Math.round(x)));
+
+    // 重複排除 & ソート
+    const uniq = Array.from(new Set(seq)).sort((a,b)=>a-b);
+
+    // 6個に満たない場合は周辺を補完（まれ）
+    while (uniq.length < 6) {
+      uniq.unshift(Math.max(1, Math.floor(uniq[0]/2)));
+      uniq.push(Math.floor(uniq[uniq.length-1]*2));
+      // 重複排除
+      const u2 = Array.from(new Set(uniq)).sort((a,b)=>a-b);
+      uniq.length = 0; uniq.push(...u2);
+      if (uniq.length > 10) break;
+    }
+
+    // 6個に揃える：大きすぎる値（chipsの2倍超）は落とす→足りなければ追加
+    let filtered = uniq.filter(x => x <= Math.max(50, c*2));
+    if (filtered.length < 6) filtered = uniq; // fallback
+
+    // それでも多い場合は中央寄りの6個を取る
+    if (filtered.length > 6) {
+      // “ターゲット”に近い順に6個選ぶ
+      const scored = filtered.map(x => ({x, s: Math.abs(x - step0)}))
+        .sort((a,b)=>a.s-b.s)
+        .slice(0, 6)
+        .map(o => o.x)
+        .sort((a,b)=>a-b);
+      return scored;
+    }
+    // ちょうど or 少ない → 小さい方から6に調整
+    return filtered.slice(0,6);
+  }
+
+  function updateStepSelect(options, keepValue) {
+    const sel = inputs.step;
+    const prev = keepValue ?? Number(sel.value) ?? state.step;
+
+    sel.innerHTML = "";
+    for (const v of options) {
+      const opt = document.createElement("option");
+      opt.value = String(v);
+      opt.textContent = fmtInt(v);
+      sel.appendChild(opt);
+    }
+
+    // できるだけ以前の選択を維持。無ければ中央付近（3番目）を採用
+    const hasPrev = options.includes(prev);
+    const next = hasPrev ? prev : (options[2] ?? options[0] ?? 1);
+    sel.value = String(next);
+    state.step = Number(sel.value) || next;
+    state.stepOptions = options;
+  }
+
+  function recalcAndRender(opts = { refreshStep: true }) {
+    state.name = inputs.name.value ?? "";
+    state.chips = Math.max(0, numVal(inputs.chips, state.chips));
+    state.initial = Math.max(0, numVal(inputs.initial, state.initial));
+    state.busted = Math.max(0, Math.floor(numVal(inputs.busted, state.busted)));
+    state.sb = Math.max(0, numVal(inputs.sb, state.sb));
+    state.bb = Math.max(0, numVal(inputs.bb, state.bb));
+    state.bbante = Math.max(0, numVal(inputs.bbante, state.bbante));
+    state.tableMax = clamp(Math.round(numVal(inputs.tableMax, state.tableMax)), 2, 8);
+    state.position = inputs.position.value;
+    state.memo = inputs.memo.value ?? "";
+
+    if (opts.refreshStep) {
+      const newOpts = buildStepOptions(state.chips);
+      updateStepSelect(newOpts, state.step);
+    } else {
+      state.step = Number(inputs.step.value) || state.step;
+    }
+
+    const vs = calcVsBB(state.chips, state.bb);
+    const dif = calcDif(state.chips, state.initial, state.busted);
+    const behind = calcBehind(state.position, state.tableMax);
+    const m = calcM(state.chips, state.sb, state.bb, state.bbante);
+
+    ui.chipsBig.textContent = fmtInt(state.chips);
+    ui.vsBB.textContent = Number.isFinite(vs) ? fmt1(vs) : "-";
+    ui.difChips.textContent = Number.isFinite(dif) ? fmtInt(dif) : "-";
+    ui.behind.textContent = Number.isFinite(behind) ? fmtInt(behind) : "-";
+    ui.mValue.textContent = Number.isFinite(m) ? fmt1(m) : "-";
+
+    renderLogs();
+    renderChart();
+    save();
+  }
+
+  function recordLog() {
+    const d = now();
+    const date = fmtDate(d);
+    const time = fmtTime(d);
+
+    const chips = state.chips;
+    const initial = state.initial;
+    const busted = state.busted;
+    const sb = state.sb;
+    const bb = state.bb;
+    const bbante = state.bbante;
+    const tableMax = state.tableMax;
+    const position = state.position;
+    const memo = (state.memo || "").trim();
+
+    const vs = calcVsBB(chips, bb);
+    const dif = calcDif(chips, initial, busted);
+    const behind = calcBehind(position, tableMax);
+    const m = calcM(chips, sb, bb, bbante);
+
+    state.logs.unshift({
+      name: state.name,
+      date,
+      time,
+      chips,
+      initial,
+      busted,
+      difChips: dif,
+      sb,
+      bb,
+      bbante,
+      tableMax,
+      vsBB: vs,
+      position,
+      behind,
+      mValue: m,
+      memo,
+      ts: d.getTime()
+    });
+
+    if (state.logs.length > 800) state.logs.length = 800;
+    recalcAndRender({ refreshStep: true });
+  }
+
+  function renderLogs() {
+    ui.logBody.innerHTML = "";
+    for (const r of state.logs) {
+      const tr = document.createElement("tr");
+      const td = (text, cls="") => {
+        const t = document.createElement("td");
+        t.textContent = text;
+        if (cls) t.className = cls;
+        return t;
+      };
+
+      tr.appendChild(td(r.name || "", ""));
+      tr.appendChild(td(r.date || "", "mono"));
+      tr.appendChild(td(r.time || "", "mono"));
+      tr.appendChild(td(fmtInt(r.chips), "mono right"));
+      tr.appendChild(td(fmtInt(r.initial), "mono right"));
+      tr.appendChild(td(fmtInt(r.busted), "mono right"));
+      tr.appendChild(td(fmtInt(r.difChips), "mono right"));
+      tr.appendChild(td(fmtInt(r.sb), "mono right"));
+      tr.appendChild(td(fmtInt(r.bb), "mono right"));
+      tr.appendChild(td(fmtInt(r.bbante), "mono right"));
+      tr.appendChild(td(fmtInt(r.tableMax), "mono right"));
+      tr.appendChild(td(Number.isFinite(r.vsBB) ? fmt1(r.vsBB) : "-", "mono right"));
+      tr.appendChild(td(r.position || "", ""));
+      tr.appendChild(td(fmtInt(r.behind), "mono right"));
+      tr.appendChild(td(Number.isFinite(r.mValue) ? fmt1(r.mValue) : "-", "mono right"));
+      tr.appendChild(td(r.memo || "", ""));
+
+      ui.logBody.appendChild(tr);
+    }
+  }
+
+  function renderChart() {
+    const w = ui.chart.width, h = ui.chart.height;
+    ctx.clearRect(0, 0, w, h);
+
+    if (state.logs.length < 2) {
+      ctx.fillStyle = "#777";
+      ctx.font = "22px -apple-system, system-ui, sans-serif";
+      ctx.fillText("ログが2件以上あるとグラフが表示されます（「記録」を押してください）", 30, 60);
+      return;
+    }
+
+    const data = [...state.logs].reverse();
+    const chipsArr = data.map(x => x.chips);
+    const vsArr = data.map(x => x.vsBB);
+
+    const pad = 54;
+    const innerW = w - pad*2;
+    const innerH = h - pad*2;
+
+    const minC = Math.min(...chipsArr);
+    const maxC = Math.max(...chipsArr);
+    const spanC = Math.max(1, maxC - minC);
+
+    const finiteVs = vsArr.filter(Number.isFinite);
+    const minV = finiteVs.length ? Math.min(...finiteVs) : 0;
+    const maxV = finiteVs.length ? Math.max(...finiteVs) : 1;
+    const spanV = Math.max(0.0001, maxV - minV);
+
+    const xAt = (i) => pad + innerW * (i / (data.length - 1));
+    const yChips = (v) => pad + innerH * (1 - (v - minC) / spanC);
+    const yVs = (v) => pad + innerH * (1 - (v - minV) / spanV);
+
+    ctx.strokeStyle = "#e8e8e8";
+    ctx.lineWidth = 1;
+    for (let i=0;i<=4;i++){
+      const y = pad + innerH*(i/4);
+      ctx.beginPath();
+      ctx.moveTo(pad, y);
+      ctx.lineTo(w-pad, y);
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = "#555";
+    ctx.font = "20px -apple-system, system-ui, sans-serif";
+    ctx.fillText(`Chips（左） min ${fmtInt(minC)} / max ${fmtInt(maxC)}`, pad, 30);
+    ctx.fillText(`vsBB（右） min ${fmt1(minV)} / max ${fmt1(maxV)}`, pad + 520, 30);
+
+    ctx.strokeStyle = "#111";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(xAt(0), yChips(chipsArr[0]));
+    for (let i=1;i<data.length;i++){
+      ctx.lineTo(xAt(i), yChips(chipsArr[i]));
+    }
+    ctx.stroke();
+
+    ctx.strokeStyle = "#555";
+    ctx.lineWidth = 3;
+    ctx.setLineDash([10, 8]);
+    ctx.beginPath();
+    ctx.moveTo(xAt(0), yVs(vsArr[0]));
+    for (let i=1;i<data.length;i++){
+      const v = vsArr[i];
+      if (!Number.isFinite(v)) continue;
+      ctx.lineTo(xAt(i), yVs(v));
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    const lastIdx = data.length - 1;
+
+    ctx.fillStyle = "#111";
+    ctx.beginPath();
+    ctx.arc(xAt(lastIdx), yChips(chipsArr[lastIdx]), 7, 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.fillStyle = "#555";
+    ctx.beginPath();
+    ctx.arc(xAt(lastIdx), yVs(vsArr[lastIdx]), 7, 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.fillStyle = "#666";
+    ctx.font = "18px -apple-system, system-ui, sans-serif";
+    const tickCount = Math.min(6, data.length);
+    for (let t=0; t<tickCount; t++){
+      const i = Math.round((data.length-1) * (t/(tickCount-1)));
+      const x = xAt(i);
+      const label = `${data[i].date} ${data[i].time.slice(0,5)}`;
+      ctx.save();
+      ctx.translate(x, h - 10);
+      ctx.rotate(-Math.PI/6);
+      ctx.fillText(label, -90, 0);
+      ctx.restore();
+    }
+  }
+
+  function logsToCsv() {
+    const headers = [
+      "Name","Date","Time","Chips","Initial","Busted","Dif Chips",
+      "SB","BB","BB ante","table MAX","ratio vsBB","Position","Num Behind","M Value","Memo"
+    ];
+    const rows = state.logs.map(r => [
+      r.name ?? "", r.date ?? "", r.time ?? "",
+      r.chips ?? "", r.initial ?? "", r.busted ?? "", r.difChips ?? "",
+      r.sb ?? "", r.bb ?? "", r.bbante ?? "", r.tableMax ?? "",
+      Number.isFinite(r.vsBB) ? (Math.round(r.vsBB*10)/10) : "",
+      r.position ?? "", r.behind ?? "",
+      Number.isFinite(r.mValue) ? (Math.round(r.mValue*10)/10) : "",
+      (r.memo ?? "").replace(/\r?\n/g, " ")
+    ]);
+    const esc = (v) => {
+      const s = String(v);
+      if (s.includes(",") || s.includes('"') || s.includes("\n")) return `"${s.replace(/"/g, '""')}"`;
+      return s;
+    };
+    return [headers.map(esc).join(","), ...rows.map(r => r.map(esc).join(","))].join("\n");
+  }
+
+  async function copyCsv() {
+    const csv = logsToCsv();
+    try { await navigator.clipboard.writeText(csv); alert("CSVをクリップボードにコピーしました。"); }
+    catch { alert("コピーに失敗しました（ブラウザの権限設定をご確認ください）。"); }
+  }
+
+  async function exportExcel() {
+    if (!window.ExcelJS) {
+      alert("Excel生成ライブラリの読み込みに失敗しました。ネット接続をご確認ください。");
+      return;
+    }
+    const wb = new ExcelJS.Workbook();
+    wb.creator = "Poker Stack Logger";
+    wb.created = new Date();
+
+    const ws = wb.addWorksheet("Logs");
+    ws.columns = [
+      { header: "Name", key: "name", width: 20 },
+      { header: "Date", key: "date", width: 12 },
+      { header: "Time", key: "time", width: 10 },
+      { header: "Chips", key: "chips", width: 12 },
+      { header: "Initial", key: "initial", width: 12 },
+      { header: "Busted", key: "busted", width: 10 },
+      { header: "Dif Chips", key: "difChips", width: 12 },
+      { header: "SB", key: "sb", width: 10 },
+      { header: "BB", key: "bb", width: 10 },
+      { header: "BB ante", key: "bbante", width: 10 },
+      { header: "table MAX", key: "tableMax", width: 10 },
+      { header: "ratio vsBB", key: "vsBB", width: 12 },
+      { header: "Position", key: "position", width: 10 },
+      { header: "Num Behind", key: "behind", width: 12 },
+      { header: "M Value", key: "mValue", width: 10 },
+      { header: "Memo", key: "memo", width: 40 },
+    ];
+    ws.getRow(1).font = { bold: true };
+
+    const rows = [...state.logs].reverse().map(r => ({
+      name: r.name ?? "", date: r.date ?? "", time: r.time ?? "",
+      chips: r.chips ?? 0, initial: r.initial ?? 0, busted: r.busted ?? 0, difChips: r.difChips ?? 0,
+      sb: r.sb ?? 0, bb: r.bb ?? 0, bbante: r.bbante ?? 0, tableMax: r.tableMax ?? 0,
+      vsBB: Number.isFinite(r.vsBB) ? (Math.round(r.vsBB*10)/10) : "",
+      position: r.position ?? "", behind: r.behind ?? 0,
+      mValue: Number.isFinite(r.mValue) ? (Math.round(r.mValue*10)/10) : "",
+      memo: r.memo ?? "",
+    }));
+    ws.addRows(rows);
+    ws.views = [{ state: "frozen", ySplit: 1 }];
+
+    const ws2 = wb.addWorksheet("Chart");
+    ws2.getCell("A1").value = "Chips & vsBB Chart（画像）";
+    ws2.getCell("A1").font = { bold: true };
+    try {
+      const dataUrl = ui.chart.toDataURL("image/png");
+      const base64 = dataUrl.split(",")[1];
+      const imageId = wb.addImage({ base64, extension: "png" });
+      ws2.addImage(imageId, { tl: { col: 0, row: 2 }, ext: { width: 1000, height: 380 } });
+    } catch {
+      ws2.getCell("A3").value = "※ グラフ画像の埋め込みに失敗しました。";
+    }
+
+    const filenameBase = (state.name && state.name.trim()) ? state.name.trim() : "PokerStack";
+    const safeName = filenameBase.replace(/[\\/:*?"<>|]/g, "_");
+    const fileName = `${safeName}_${new Date().toISOString().slice(0,19).replace(/[:T]/g,"-")}.xlsx`;
+
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    saveAs(blob, fileName);
+  }
+
+  function bind() {
+    inputs.name.value = state.name;
+    inputs.chips.value = state.chips;
+    inputs.initial.value = state.initial;
+    inputs.busted.value = state.busted;
+    inputs.sb.value = state.sb;
+    inputs.bb.value = state.bb;
+    inputs.bbante.value = state.bbante;
+    inputs.tableMax.value = state.tableMax;
+    inputs.position.value = state.position;
+    inputs.memo.value = state.memo;
+
+    // 初期 step候補を生成して反映
+    updateStepSelect(buildStepOptions(state.chips), state.step);
+
+    // chips変更時は step候補を更新（★ここが要望のポイント）
+    inputs.chips.addEventListener("input", () => recalcAndRender({ refreshStep: true }));
+    inputs.chips.addEventListener("change", () => recalcAndRender({ refreshStep: true }));
+
+    // その他は通常更新（step候補は変えない）
+    for (const k of ["name","initial","busted","sb","bb","bbante","tableMax","position","memo"]) {
+      inputs[k].addEventListener("input", () => recalcAndRender({ refreshStep: false }));
+      inputs[k].addEventListener("change", () => recalcAndRender({ refreshStep: false }));
+    }
+    inputs.step.addEventListener("change", () => recalcAndRender({ refreshStep: false }));
+
+    btn.plus.addEventListener("click", () => {
+      state.step = Number(inputs.step.value) || state.step;
+      state.chips = Math.max(0, state.chips + state.step);
+      inputs.chips.value = state.chips;
+      recalcAndRender({ refreshStep: true });
+    });
+    btn.minus.addEventListener("click", () => {
+      state.step = Number(inputs.step.value) || state.step;
+      state.chips = Math.max(0, state.chips - state.step);
+      inputs.chips.value = state.chips;
+      recalcAndRender({ refreshStep: true });
+    });
+
+    btn.record.addEventListener("click", recordLog);
+
+    btn.undo.addEventListener("click", () => {
+      if (state.logs.length === 0) return;
+      state.logs.shift();
+      recalcAndRender({ refreshStep: true });
+    });
+
+    btn.clearAll.addEventListener("click", () => {
+      if (!confirm("すべてのログと設定を消去します。よろしいですか？")) return;
+      state = structuredClone(defaultState);
+      save();
+      bind();
+      recalcAndRender({ refreshStep: true });
+    });
+
+    ui.exportXlsx.addEventListener("click", exportExcel);
+    ui.copyCsv.addEventListener("click", copyCsv);
+  }
+
+  bind();
+  recalcAndRender({ refreshStep: true });
+})();
+</script>
+</body>
+</html>
