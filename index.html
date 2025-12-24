@@ -37,7 +37,8 @@
     .grid2 { display:grid; grid-template-columns: 1fr; gap: 10px; }
     @media (min-width: 720px) { .grid2 { grid-template-columns: 1fr 1fr; } }
 
-    canvas { width: 100%; height: 220px; border-radius: 14px; background:#fafafa; border:1px solid #eee; }
+    /* canvasはCSSで表示サイズを決め、JSで内部解像度を合わせる（重要） */
+    canvas { width: 100%; height: 260px; border-radius: 14px; background:#fafafa; border:1px solid #eee; display:block; }
 
     table { width:100%; border-collapse: collapse; }
     th, td { border-top:1px solid #eee; padding:10px 6px; font-size: 13px; vertical-align: top; }
@@ -142,9 +143,11 @@
 
     <div class="row">
       <div>
-        <label>増減単位（Chipsに応じて自動）</label>
+        <label>増減単位（Chipsに応じて候補表示）</label>
         <select id="step"></select>
-        <div class="hint" style="margin-top:4px;">Chipsに合わせて候補が自動更新されます</div>
+        <div class="hint" style="margin-top:4px;">
+          ※ 候補の自動更新は「Chipsを手入力した時」または「記録」した時のみ（連打中は固定）
+        </div>
       </div>
       <button class="btn btn-ghost" id="minus">−</button>
       <button class="btn btn-ghost" id="plus">＋</button>
@@ -157,16 +160,31 @@
     </div>
 
     <div class="hint" style="margin-top:8px;">
-      ※ 「記録」を押すと、現在状態＋メモがログに保存されます。<br>
       ※ 例：初期600 / 1回飛び / 現在400 → Dif Chips = 400 − 600 − 600 = −800
     </div>
   </div>
 
   <div class="card">
     <h2>推移グラフ（Chips と vsBB）</h2>
-    <canvas id="chart" width="1100" height="420"></canvas>
+
+    <!-- ★追加：Name / Dateで表示切り替え -->
+    <div class="row" style="margin: 8px 0 10px;">
+      <div>
+        <label>グラフ表示：Name</label>
+        <select id="chartName" style="width: 260px;"></select>
+      </div>
+      <div>
+        <label>グラフ表示：Date</label>
+        <select id="chartDate" style="width: 200px;"></select>
+      </div>
+      <div style="flex:1"></div>
+      <button class="btn btn-ghost" id="chartReset">表示リセット</button>
+    </div>
+
+    <canvas id="chart"></canvas>
+
     <div class="hint" style="margin-top:8px;">
-      横軸：Date+Time（ログ時刻）／ 左縦軸：Chips ／ 右縦軸：vsBB
+      横軸：記録時刻（時間間隔に連動）／ 左縦軸：Chips ／ 右縦軸：vsBB
     </div>
   </div>
 
@@ -219,9 +237,9 @@
 
 <script>
 (() => {
-  const LS_KEY = "poker_stack_logger_v4";
+  const LS_KEY = "poker_stack_logger_v6";
 
-  const POSITIONS = ["UTG","UTG+1","LJ","HJ","CO","BTN","SB","BB"]; // 8max想定（固定）
+  const POSITIONS = ["UTG","UTG+1","LJ","HJ","CO","BTN","SB","BB"];
   const el = (id) => document.getElementById(id);
 
   const inputs = {
@@ -248,6 +266,12 @@
     chart: el("chart"),
     exportXlsx: el("exportXlsx"),
     copyCsv: el("copyCsv"),
+  };
+
+  const chartUi = {
+    name: el("chartName"),
+    date: el("chartDate"),
+    reset: el("chartReset"),
   };
 
   const btn = {
@@ -281,6 +305,7 @@
     memo: "",
     step: 100,
     stepOptions: [10,20,50,100,200,500],
+    chartFilter: { name: "__ALL__", date: "__ALL__" },
     logs: []
   };
 
@@ -293,93 +318,62 @@
       const parsed = JSON.parse(raw);
       if (!Array.isArray(parsed.logs)) parsed.logs = [];
       if (!Array.isArray(parsed.stepOptions) || parsed.stepOptions.length === 0) parsed.stepOptions = structuredClone(defaultState.stepOptions);
+      if (!parsed.chartFilter) parsed.chartFilter = { name:"__ALL__", date:"__ALL__" };
+      if (typeof parsed.chartFilter.name !== "string") parsed.chartFilter.name = "__ALL__";
+      if (typeof parsed.chartFilter.date !== "string") parsed.chartFilter.date = "__ALL__";
       return { ...structuredClone(defaultState), ...parsed };
     } catch {
       return structuredClone(defaultState);
     }
   }
 
-  function save() {
-    localStorage.setItem(LS_KEY, JSON.stringify(state));
-  }
+  function save() { localStorage.setItem(LS_KEY, JSON.stringify(state)); }
 
   function numVal(input, fallback=0) {
     const v = Number(input.value);
     return Number.isFinite(v) ? v : fallback;
   }
+  function clamp(n, min, max) { return Math.min(max, Math.max(min, n)); }
 
-  function clamp(n, min, max) {
-    return Math.min(max, Math.max(min, n));
-  }
-
-  function calcVsBB(chips, bb) {
-    return (bb > 0) ? (chips / bb) : NaN;
-  }
-
+  function calcVsBB(chips, bb) { return (bb > 0) ? (chips / bb) : NaN; }
   function calcDif(chips, initial, bustedCount) {
     const ini = Math.max(0, initial || 0);
     const bust = Math.max(0, Math.floor(bustedCount || 0));
     return chips - ini - (bust * ini);
   }
-
   function calcBehind(position, tableMax) {
     const idx = POSITIONS.indexOf(position);
     if (idx < 0) return NaN;
     const tm = clamp(Math.round(tableMax || 0), 2, 8);
     return Math.max(0, (tm - 1) - idx);
   }
-
   function calcM(chips, sb, bb, bbante) {
     const cost = (sb||0) + (bb||0) + (bbante||0);
     return (cost > 0) ? (chips / cost) : NaN;
   }
 
-  // ★ chipsに応じた「使いやすい増減単位」を6個作る
-  // 1/2/5系列で、chipsのだいたい1%〜50%あたりをカバーするイメージ
+  // chipsに応じた6候補（1/2/5系列）
   function buildStepOptions(chips) {
     const c = Math.max(0, Math.floor(chips || 0));
-    // chipsが小さいときの最低候補
     if (c <= 0) return [1,2,5,10,20,50];
 
-    // “基準値”を chips の約 5% に置く（ここが体感で使いやすい）
-    const target = Math.max(1, Math.floor(c * 0.05));
-
-    // targetの桁を決める
+    const target = Math.max(1, Math.floor(c * 0.05)); // 5%目安
     const pow = Math.pow(10, Math.floor(Math.log10(target)));
     const mant = target / pow;
 
-    // 1/2/5のうち近いもの
     let base;
     if (mant < 1.5) base = 1;
     else if (mant < 3.5) base = 2;
     else base = 5;
 
     const step0 = base * pow;
-
-    // step0を中心に、下に2つ、上に3つで計6つ
-    const seq = [step0/5, step0/2, step0, step0*2, step0*5, step0*10]
-      .map(x => Math.max(1, Math.round(x)));
-
-    // 重複排除 & ソート
+    const seq = [step0/5, step0/2, step0, step0*2, step0*5, step0*10].map(x => Math.max(1, Math.round(x)));
     const uniq = Array.from(new Set(seq)).sort((a,b)=>a-b);
 
-    // 6個に満たない場合は周辺を補完（まれ）
-    while (uniq.length < 6) {
-      uniq.unshift(Math.max(1, Math.floor(uniq[0]/2)));
-      uniq.push(Math.floor(uniq[uniq.length-1]*2));
-      // 重複排除
-      const u2 = Array.from(new Set(uniq)).sort((a,b)=>a-b);
-      uniq.length = 0; uniq.push(...u2);
-      if (uniq.length > 10) break;
-    }
-
-    // 6個に揃える：大きすぎる値（chipsの2倍超）は落とす→足りなければ追加
     let filtered = uniq.filter(x => x <= Math.max(50, c*2));
-    if (filtered.length < 6) filtered = uniq; // fallback
+    if (filtered.length < 6) filtered = uniq;
 
-    // それでも多い場合は中央寄りの6個を取る
     if (filtered.length > 6) {
-      // “ターゲット”に近い順に6個選ぶ
       const scored = filtered.map(x => ({x, s: Math.abs(x - step0)}))
         .sort((a,b)=>a.s-b.s)
         .slice(0, 6)
@@ -387,7 +381,6 @@
         .sort((a,b)=>a-b);
       return scored;
     }
-    // ちょうど or 少ない → 小さい方から6に調整
     return filtered.slice(0,6);
   }
 
@@ -402,16 +395,97 @@
       opt.textContent = fmtInt(v);
       sel.appendChild(opt);
     }
-
-    // できるだけ以前の選択を維持。無ければ中央付近（3番目）を採用
-    const hasPrev = options.includes(prev);
-    const next = hasPrev ? prev : (options[2] ?? options[0] ?? 1);
+    const next = options.includes(prev) ? prev : (options[2] ?? options[0] ?? 1);
     sel.value = String(next);
     state.step = Number(sel.value) || next;
     state.stepOptions = options;
   }
 
-  function recalcAndRender(opts = { refreshStep: true }) {
+  // ★「Chips手入力」または「記録」のときだけ候補更新する
+  function refreshStepOptionsIfNeeded(keepValue) {
+    const newOpts = buildStepOptions(state.chips);
+    updateStepSelect(newOpts, keepValue ?? state.step);
+  }
+
+  // canvasを表示サイズ×DPRに合わせる（文字が潰れない/滲まない）
+  function resizeCanvasToDisplaySize(canvas, ctx) {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    const displayWidth = Math.max(1, Math.round(rect.width * dpr));
+    const displayHeight = Math.max(1, Math.round(rect.height * dpr));
+    if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
+      canvas.width = displayWidth;
+      canvas.height = displayHeight;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+    }
+  }
+
+  // ===== グラフフィルタUI =====
+  function getUniqueNames(logs) {
+    const set = new Set();
+    for (const r of logs) {
+      const n = (r.name || "").trim();
+      if (n) set.add(n);
+    }
+    return Array.from(set).sort((a,b)=>a.localeCompare(b,"ja"));
+  }
+
+  function getUniqueDatesForName(logs, name) {
+    const set = new Set();
+    for (const r of logs) {
+      if (name !== "__ALL__") {
+        if ((r.name || "").trim() !== name) continue;
+      }
+      if (r.date) set.add(r.date);
+    }
+    return Array.from(set).sort().reverse();
+  }
+
+  function fillSelect(selectEl, items, currentValue, allLabel) {
+    selectEl.innerHTML = "";
+
+    const optAll = document.createElement("option");
+    optAll.value = "__ALL__";
+    optAll.textContent = allLabel;
+    selectEl.appendChild(optAll);
+
+    for (const v of items) {
+      const opt = document.createElement("option");
+      opt.value = v;
+      opt.textContent = v;
+      selectEl.appendChild(opt);
+    }
+
+    const values = new Set(["__ALL__", ...items]);
+    selectEl.value = values.has(currentValue) ? currentValue : "__ALL__";
+  }
+
+  function updateChartFilterUI() {
+    const names = getUniqueNames(state.logs);
+    fillSelect(chartUi.name, names, state.chartFilter.name, "すべてのName");
+
+    // Nameが変わったら、それに合わせてDate候補を作る
+    const selectedName = chartUi.name.value;
+    state.chartFilter.name = selectedName;
+
+    const dates = getUniqueDatesForName(state.logs, selectedName);
+    fillSelect(chartUi.date, dates, state.chartFilter.date, "すべての日付");
+
+    // Dateも反映
+    state.chartFilter.date = chartUi.date.value;
+  }
+
+  function applyChartFilter(logs) {
+    const f = state.chartFilter;
+    return logs.filter(r => {
+      if (f.name !== "__ALL__" && ((r.name || "").trim() !== f.name)) return false;
+      if (f.date !== "__ALL__" && (r.date !== f.date)) return false;
+      return true;
+    });
+  }
+
+  // ===== ログ描画等 =====
+  function recalcAndRender() {
     state.name = inputs.name.value ?? "";
     state.chips = Math.max(0, numVal(inputs.chips, state.chips));
     state.initial = Math.max(0, numVal(inputs.initial, state.initial));
@@ -422,13 +496,7 @@
     state.tableMax = clamp(Math.round(numVal(inputs.tableMax, state.tableMax)), 2, 8);
     state.position = inputs.position.value;
     state.memo = inputs.memo.value ?? "";
-
-    if (opts.refreshStep) {
-      const newOpts = buildStepOptions(state.chips);
-      updateStepSelect(newOpts, state.step);
-    } else {
-      state.step = Number(inputs.step.value) || state.step;
-    }
+    state.step = Number(inputs.step.value) || state.step;
 
     const vs = calcVsBB(state.chips, state.bb);
     const dif = calcDif(state.chips, state.initial, state.busted);
@@ -485,9 +553,12 @@
       memo,
       ts: d.getTime()
     });
-
     if (state.logs.length > 800) state.logs.length = 800;
-    recalcAndRender({ refreshStep: true });
+
+    // ★ログ追加時：次の局面向けに候補更新（ただし選択値は維持）
+    refreshStepOptionsIfNeeded(state.step);
+
+    recalcAndRender();
   }
 
   function renderLogs() {
@@ -500,7 +571,6 @@
         if (cls) t.className = cls;
         return t;
       };
-
       tr.appendChild(td(r.name || "", ""));
       tr.appendChild(td(r.date || "", "mono"));
       tr.appendChild(td(r.time || "", "mono"));
@@ -517,29 +587,40 @@
       tr.appendChild(td(fmtInt(r.behind), "mono right"));
       tr.appendChild(td(Number.isFinite(r.mValue) ? fmt1(r.mValue) : "-", "mono right"));
       tr.appendChild(td(r.memo || "", ""));
-
       ui.logBody.appendChild(tr);
     }
   }
 
+  // ★時間軸・フィルタ・可読性改善のrenderChart
   function renderChart() {
+    // canvasの内部解像度を表示サイズに合わせてから描画
+    resizeCanvasToDisplaySize(ui.chart, ctx);
+
     const w = ui.chart.width, h = ui.chart.height;
     ctx.clearRect(0, 0, w, h);
 
-    if (state.logs.length < 2) {
+    // フィルタUI更新（ログ増減に追従）
+    updateChartFilterUI();
+
+    const filtered = applyChartFilter(state.logs);
+    if (filtered.length < 2) {
       ctx.fillStyle = "#777";
-      ctx.font = "22px -apple-system, system-ui, sans-serif";
-      ctx.fillText("ログが2件以上あるとグラフが表示されます（「記録」を押してください）", 30, 60);
+      const fontPx = Math.max(14, Math.round(h * 0.06));
+      ctx.font = `${fontPx}px -apple-system, system-ui, sans-serif`;
+      ctx.fillText("ログが2件以上あるとグラフが表示されます（フィルタ条件も確認）", 20, 60);
       return;
     }
 
-    const data = [...state.logs].reverse();
+    // 古い→新しい順
+    const data = [...filtered].sort((a,b) => (a.ts||0) - (b.ts||0));
+
     const chipsArr = data.map(x => x.chips);
     const vsArr = data.map(x => x.vsBB);
 
-    const pad = 54;
+    const pad = Math.round(Math.min(w,h) * 0.08);
+    const topPad = Math.round(pad * 0.9);
     const innerW = w - pad*2;
-    const innerH = h - pad*2;
+    const innerH = h - (topPad + pad);
 
     const minC = Math.min(...chipsArr);
     const maxC = Math.max(...chipsArr);
@@ -550,72 +631,104 @@
     const maxV = finiteVs.length ? Math.max(...finiteVs) : 1;
     const spanV = Math.max(0.0001, maxV - minV);
 
-    const xAt = (i) => pad + innerW * (i / (data.length - 1));
-    const yChips = (v) => pad + innerH * (1 - (v - minC) / spanC);
-    const yVs = (v) => pad + innerH * (1 - (v - minV) / spanV);
+    const minTs = Math.min(...data.map(d => d.ts || 0));
+    const maxTs = Math.max(...data.map(d => d.ts || 0));
+    const spanTs = Math.max(1, maxTs - minTs);
 
+    // ★時間軸でx座標
+    const xAt = (ts) => pad + innerW * ((ts - minTs) / spanTs);
+    const yChips = (v) => topPad + innerH * (1 - (v - minC) / spanC);
+    const yVs = (v) => topPad + innerH * (1 - (v - minV) / spanV);
+
+    // グリッド
     ctx.strokeStyle = "#e8e8e8";
     ctx.lineWidth = 1;
     for (let i=0;i<=4;i++){
-      const y = pad + innerH*(i/4);
+      const y = topPad + innerH*(i/4);
       ctx.beginPath();
       ctx.moveTo(pad, y);
       ctx.lineTo(w-pad, y);
       ctx.stroke();
     }
 
-    ctx.fillStyle = "#555";
-    ctx.font = "20px -apple-system, system-ui, sans-serif";
-    ctx.fillText(`Chips（左） min ${fmtInt(minC)} / max ${fmtInt(maxC)}`, pad, 30);
-    ctx.fillText(`vsBB（右） min ${fmt1(minV)} / max ${fmt1(maxV)}`, pad + 520, 30);
+    const titleFont = Math.max(14, Math.round(h * 0.055));
+    const smallFont = Math.max(12, Math.round(h * 0.042));
 
+    ctx.fillStyle = "#555";
+    ctx.font = `${titleFont}px -apple-system, system-ui, sans-serif`;
+    ctx.fillText(`Chips（左） min ${fmtInt(minC)} / max ${fmtInt(maxC)}`, pad, Math.round(titleFont*1.2));
+    ctx.fillText(`vsBB（右） min ${fmt1(minV)} / max ${fmt1(maxV)}`, pad, Math.round(titleFont*2.35));
+
+    // Chips実線
     ctx.strokeStyle = "#111";
-    ctx.lineWidth = 3;
+    ctx.lineWidth = Math.max(2, Math.round(h*0.01));
     ctx.beginPath();
-    ctx.moveTo(xAt(0), yChips(chipsArr[0]));
+    ctx.moveTo(xAt(data[0].ts), yChips(chipsArr[0]));
     for (let i=1;i<data.length;i++){
-      ctx.lineTo(xAt(i), yChips(chipsArr[i]));
+      ctx.lineTo(xAt(data[i].ts), yChips(chipsArr[i]));
     }
     ctx.stroke();
 
+    // vsBB点線
     ctx.strokeStyle = "#555";
-    ctx.lineWidth = 3;
-    ctx.setLineDash([10, 8]);
+    ctx.lineWidth = Math.max(2, Math.round(h*0.01));
+    ctx.setLineDash([Math.round(h*0.03), Math.round(h*0.02)]);
     ctx.beginPath();
-    ctx.moveTo(xAt(0), yVs(vsArr[0]));
+    ctx.moveTo(xAt(data[0].ts), yVs(vsArr[0]));
     for (let i=1;i<data.length;i++){
       const v = vsArr[i];
       if (!Number.isFinite(v)) continue;
-      ctx.lineTo(xAt(i), yVs(v));
+      ctx.lineTo(xAt(data[i].ts), yVs(v));
     }
     ctx.stroke();
     ctx.setLineDash([]);
 
+    // 最新点
     const lastIdx = data.length - 1;
-
+    const r = Math.max(4, Math.round(h*0.022));
     ctx.fillStyle = "#111";
     ctx.beginPath();
-    ctx.arc(xAt(lastIdx), yChips(chipsArr[lastIdx]), 7, 0, Math.PI*2);
+    ctx.arc(xAt(data[lastIdx].ts), yChips(chipsArr[lastIdx]), r, 0, Math.PI*2);
     ctx.fill();
 
     ctx.fillStyle = "#555";
     ctx.beginPath();
-    ctx.arc(xAt(lastIdx), yVs(vsArr[lastIdx]), 7, 0, Math.PI*2);
+    ctx.arc(xAt(data[lastIdx].ts), yVs(vsArr[lastIdx]), r, 0, Math.PI*2);
     ctx.fill();
 
+    // X軸ラベル（時間間隔に応じて6本）
     ctx.fillStyle = "#666";
-    ctx.font = "18px -apple-system, system-ui, sans-serif";
+    ctx.font = `${smallFont}px -apple-system, system-ui, sans-serif`;
     const tickCount = Math.min(6, data.length);
+
     for (let t=0; t<tickCount; t++){
-      const i = Math.round((data.length-1) * (t/(tickCount-1)));
-      const x = xAt(i);
-      const label = `${data[i].date} ${data[i].time.slice(0,5)}`;
+      const targetTs = minTs + (spanTs * (t/(tickCount-1)));
+
+      // targetTsに最も近いログを選ぶ
+      let nearest = data[0];
+      let best = Math.abs((nearest.ts||0) - targetTs);
+      for (const r of data) {
+        const d = Math.abs((r.ts||0) - targetTs);
+        if (d < best) { best = d; nearest = r; }
+      }
+
+      const x = xAt(nearest.ts);
+      const label = `${nearest.date} ${String(nearest.time||"").slice(0,5)}`;
+
       ctx.save();
-      ctx.translate(x, h - 10);
+      ctx.translate(x, h - Math.round(smallFont*0.5));
       ctx.rotate(-Math.PI/6);
-      ctx.fillText(label, -90, 0);
+      ctx.fillText(label, -Math.round(smallFont*5.5), 0);
       ctx.restore();
     }
+
+    // フィルタ表示
+    const f = state.chartFilter;
+    const filterText = `表示：${f.name === "__ALL__" ? "All Name" : f.name} / ${f.date === "__ALL__" ? "All Date" : f.date}`;
+    const tw = ctx.measureText(filterText).width;
+    ctx.fillStyle = "#666";
+    ctx.font = `${smallFont}px -apple-system, system-ui, sans-serif`;
+    ctx.fillText(filterText, w - pad - tw, topPad + innerH + Math.round(smallFont*1.2));
   }
 
   function logsToCsv() {
@@ -641,16 +754,12 @@
   }
 
   async function copyCsv() {
-    const csv = logsToCsv();
-    try { await navigator.clipboard.writeText(csv); alert("CSVをクリップボードにコピーしました。"); }
+    try { await navigator.clipboard.writeText(logsToCsv()); alert("CSVをクリップボードにコピーしました。"); }
     catch { alert("コピーに失敗しました（ブラウザの権限設定をご確認ください）。"); }
   }
 
   async function exportExcel() {
-    if (!window.ExcelJS) {
-      alert("Excel生成ライブラリの読み込みに失敗しました。ネット接続をご確認ください。");
-      return;
-    }
+    if (!window.ExcelJS) { alert("Excel生成ライブラリの読み込みに失敗しました。ネット接続をご確認ください。"); return; }
     const wb = new ExcelJS.Workbook();
     wb.creator = "Poker Stack Logger";
     wb.created = new Date();
@@ -692,10 +801,12 @@
     ws2.getCell("A1").value = "Chips & vsBB Chart（画像）";
     ws2.getCell("A1").font = { bold: true };
     try {
+      // いったん最新描画してから画像化（サイズ合わない事故を防ぐ）
+      renderChart();
       const dataUrl = ui.chart.toDataURL("image/png");
       const base64 = dataUrl.split(",")[1];
       const imageId = wb.addImage({ base64, extension: "png" });
-      ws2.addImage(imageId, { tl: { col: 0, row: 2 }, ext: { width: 1000, height: 380 } });
+      ws2.addImage(imageId, { tl: { col: 0, row: 2 }, ext: { width: 1000, height: 420 } });
     } catch {
       ws2.getCell("A3").value = "※ グラフ画像の埋め込みに失敗しました。";
     }
@@ -707,6 +818,11 @@
     const buf = await wb.xlsx.writeBuffer();
     const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
     saveAs(blob, fileName);
+  }
+
+  function initStepOptionsOnce() {
+    const opts = buildStepOptions(state.chips);
+    updateStepSelect(opts, state.step);
   }
 
   function bind() {
@@ -721,31 +837,31 @@
     inputs.position.value = state.position;
     inputs.memo.value = state.memo;
 
-    // 初期 step候補を生成して反映
-    updateStepSelect(buildStepOptions(state.chips), state.step);
+    initStepOptionsOnce();
 
-    // chips変更時は step候補を更新（★ここが要望のポイント）
-    inputs.chips.addEventListener("input", () => recalcAndRender({ refreshStep: true }));
-    inputs.chips.addEventListener("change", () => recalcAndRender({ refreshStep: true }));
+    // ★Chipsを「手入力」したときだけ候補更新（+/-連打中は固定）
+    inputs.chips.addEventListener("input", () => {
+      state.chips = Math.max(0, numVal(inputs.chips, state.chips));
+      refreshStepOptionsIfNeeded(state.step);
+      recalcAndRender();
+    });
 
-    // その他は通常更新（step候補は変えない）
-    for (const k of ["name","initial","busted","sb","bb","bbante","tableMax","position","memo"]) {
-      inputs[k].addEventListener("input", () => recalcAndRender({ refreshStep: false }));
-      inputs[k].addEventListener("change", () => recalcAndRender({ refreshStep: false }));
+    for (const k of ["name","initial","busted","sb","bb","bbante","tableMax","position","memo","step"]) {
+      inputs[k].addEventListener("input", recalcAndRender);
+      inputs[k].addEventListener("change", recalcAndRender);
     }
-    inputs.step.addEventListener("change", () => recalcAndRender({ refreshStep: false }));
 
     btn.plus.addEventListener("click", () => {
       state.step = Number(inputs.step.value) || state.step;
       state.chips = Math.max(0, state.chips + state.step);
       inputs.chips.value = state.chips;
-      recalcAndRender({ refreshStep: true });
+      recalcAndRender(); // 候補更新しない
     });
     btn.minus.addEventListener("click", () => {
       state.step = Number(inputs.step.value) || state.step;
       state.chips = Math.max(0, state.chips - state.step);
       inputs.chips.value = state.chips;
-      recalcAndRender({ refreshStep: true });
+      recalcAndRender(); // 候補更新しない
     });
 
     btn.record.addEventListener("click", recordLog);
@@ -753,23 +869,48 @@
     btn.undo.addEventListener("click", () => {
       if (state.logs.length === 0) return;
       state.logs.shift();
-      recalcAndRender({ refreshStep: true });
+      recalcAndRender();
     });
 
     btn.clearAll.addEventListener("click", () => {
       if (!confirm("すべてのログと設定を消去します。よろしいですか？")) return;
       state = structuredClone(defaultState);
       save();
-      bind();
-      recalcAndRender({ refreshStep: true });
+      // 再読み込み相当
+      location.reload();
     });
+
+    // ★グラフフィルタUI
+    chartUi.name.addEventListener("change", () => {
+      state.chartFilter.name = chartUi.name.value;
+      // Name変更時は日付候補が変わるので再構築
+      updateChartFilterUI();
+      renderChart();
+      save();
+    });
+    chartUi.date.addEventListener("change", () => {
+      state.chartFilter.date = chartUi.date.value;
+      renderChart();
+      save();
+    });
+    chartUi.reset.addEventListener("click", () => {
+      state.chartFilter = { name: "__ALL__", date: "__ALL__" };
+      updateChartFilterUI();
+      renderChart();
+      save();
+    });
+
+    // 画面回転/リサイズで文字が崩れないように再描画
+    window.addEventListener("resize", () => renderChart(), { passive: true });
 
     ui.exportXlsx.addEventListener("click", exportExcel);
     ui.copyCsv.addEventListener("click", copyCsv);
   }
 
   bind();
-  recalcAndRender({ refreshStep: true });
+  // フィルタUI初期反映（保存済み状態を復元）
+  updateChartFilterUI();
+  recalcAndRender();
 })();
 </script>
 </body>
