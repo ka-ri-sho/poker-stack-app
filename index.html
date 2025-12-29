@@ -471,6 +471,21 @@
             <span class="pill">横軸：記録時刻</span>
           </div>
 
+          <div class="row" style="margin-top:10px; align-items:flex-end;">
+            <div style="flex:1 1 40%;">
+              <label>Filter（Name）</label>
+              <select id="chartFilterName"></select>
+            </div>
+            <div style="flex:1 1 40%;">
+              <label>Filter（日付）</label>
+              <select id="chartFilterDate"></select>
+            </div>
+            <div style="flex:0 0 auto;">
+              <button class="btn btnGhost btnSmall" id="chartFilterClear">解除</button>
+            </div>
+          </div>
+          <div class="hint" id="chartFilterHint" style="margin-top:8px;"></div>
+
           <div style="height:10px"></div>
           <canvas id="chart"></canvas>
 
@@ -658,6 +673,10 @@
     // Chart range (sticky expanding)
     chartYMin: null,
     chartYMax: null,
+
+    // Chart filters
+    chartFilterName: "__ALL__",
+    chartFilterDate: "__ALL__",
 
     // for chips error toast suppression
     lastInvalidChips: null,
@@ -1068,6 +1087,7 @@
     toast(`保存しました：${date} ${time.slice(0,5)}`);
 
     renderLogs();
+    buildChartFilters();
     recalc();
   }
 
@@ -1076,6 +1096,7 @@
     state.logs.shift();
     toast("直近ログを削除しました");
     renderLogs();
+    buildChartFilters();
     recalc();
   }
 
@@ -1106,6 +1127,81 @@
     }
   }
 
+  // ===== Chart filters =====
+  function normalizeNameForFilter(v){
+    const s = (v ?? "").trim();
+    return s === "" ? "(空欄)" : s;
+  }
+  function denormalizeNameFromFilter(v){
+    return v === "(空欄)" ? "" : v;
+  }
+
+  function buildChartFilters(){
+    const selName = el("chartFilterName");
+    const selDate = el("chartFilterDate");
+    const hintEl = el("chartFilterHint");
+    if(!selName || !selDate) return;
+
+    const names = Array.from(new Set(state.logs.map(r => normalizeNameForFilter(r.name)))).sort((a,b)=>a.localeCompare(b,"ja"));
+    const dates = Array.from(new Set(state.logs.map(r => (r.date ?? "")))).filter(Boolean).sort();
+
+    // Preserve current selection if possible
+    const curName = state.chartFilterName ?? "__ALL__";
+    const curDate = state.chartFilterDate ?? "__ALL__";
+
+    selName.innerHTML = "";
+    selDate.innerHTML = "";
+
+    const optAll1 = document.createElement("option");
+    optAll1.value = "__ALL__";
+    optAll1.textContent = "（すべて）";
+    selName.appendChild(optAll1);
+
+    for(const n of names){
+      const o = document.createElement("option");
+      o.value = n;
+      o.textContent = n;
+      selName.appendChild(o);
+    }
+
+    const optAll2 = document.createElement("option");
+    optAll2.value = "__ALL__";
+    optAll2.textContent = "（すべて）";
+    selDate.appendChild(optAll2);
+
+    for(const d of dates){
+      const o = document.createElement("option");
+      o.value = d;
+      o.textContent = d;
+      selDate.appendChild(o);
+    }
+
+    // Restore
+    selName.value = (curName !== "__ALL__" && names.includes(curName)) ? curName : "__ALL__";
+    selDate.value = (curDate !== "__ALL__" && dates.includes(curDate)) ? curDate : "__ALL__";
+
+    state.chartFilterName = selName.value;
+    state.chartFilterDate = selDate.value;
+
+    if(hintEl){
+      const nLabel = (selName.value === "__ALL__") ? "Name:すべて" : `Name:${selName.value}`;
+      const dLabel = (selDate.value === "__ALL__") ? "日付:すべて" : `日付:${selDate.value}`;
+      hintEl.textContent = `${nLabel} / ${dLabel}（この条件で描画）`;
+    }
+  }
+
+  function getFilteredLogsForChart(){
+    const selName = state.chartFilterName ?? "__ALL__";
+    const selDate = state.chartFilterDate ?? "__ALL__";
+
+    return state.logs.filter(r => {
+      const n = normalizeNameForFilter(r.name);
+      const okName = (selName === "__ALL__") ? true : (n === selName);
+      const okDate = (selDate === "__ALL__") ? true : ((r.date ?? "") === selDate);
+      return okName && okDate;
+    });
+  }
+
   function resizeCanvasToDisplaySize(canvas, ctx){
     const dpr = window.devicePixelRatio || 1;
     const rect = canvas.getBoundingClientRect();
@@ -1124,16 +1220,25 @@
     const w = chart.width, h = chart.height;
     cctx.clearRect(0,0,w,h);
 
-    // Need at least 2 points
-    if(state.logs.length < 2){
+    // Need at least 2 points (after filter)
+    const filtered = getFilteredLogsForChart();
+    if(filtered.length < 2){
       cctx.fillStyle = "#777";
       const fontPx = Math.max(14, Math.round(h * 0.06));
       cctx.font = `${fontPx}px -apple-system, system-ui, sans-serif`;
-      cctx.fillText("ログが2件以上あると表示されます", 20, 60);
+      cctx.fillText("ログが2件以上あると表示されます（フィルター後）", 20, 60);
       return;
     }
 
-    const data = [...state.logs].sort((a,b) => (a.ts||0) - (b.ts||0));
+    const data = [...filtered].sort((a,b) => (a.ts||0) - (b.ts||0));
+    // update hint with point count
+    const hintEl = el("chartFilterHint");
+    if(hintEl){
+      const nLabel = (state.chartFilterName === "__ALL__") ? "Name:すべて" : `Name:${state.chartFilterName}`;
+      const dLabel = (state.chartFilterDate === "__ALL__") ? "日付:すべて" : `日付:${state.chartFilterDate}`;
+      hintEl.textContent = `${nLabel} / ${dLabel}（${data.length}点）`;
+    }
+
     const chipsArr = data.map(d => d.chips);
 
     const minTs = Math.min(...data.map(d => d.ts||0));
@@ -1219,7 +1324,17 @@
     }
     cctx.stroke();
 
-    // last point
+    // points for each log
+    cctx.fillStyle = "#111";
+    const rSmall = Math.max(3, Math.round(h*0.012));
+    for(let i=0;i<data.length;i++){
+      const p = data[i];
+      cctx.beginPath();
+      cctx.arc(xAt(p.ts), yAt(p.chips), rSmall, 0, Math.PI*2);
+      cctx.fill();
+    }
+
+    // last point (emphasized)
     const last = data[data.length-1];
     cctx.fillStyle = "#111";
     cctx.beginPath();
@@ -1440,6 +1555,37 @@
       recalc();
     });
 
+    // chart filters
+    const chartFilterNameSel = el("chartFilterName");
+    const chartFilterDateSel = el("chartFilterDate");
+    const chartFilterClearBtn = el("chartFilterClear");
+
+    if(chartFilterNameSel && chartFilterDateSel){
+      chartFilterNameSel.addEventListener("change", () => {
+        state.chartFilterName = chartFilterNameSel.value;
+        buildChartFilters();
+        save();
+        renderChart();
+      });
+      chartFilterDateSel.addEventListener("change", () => {
+        state.chartFilterDate = chartFilterDateSel.value;
+        buildChartFilters();
+        save();
+        renderChart();
+      });
+    }
+
+    if(chartFilterClearBtn){
+      chartFilterClearBtn.addEventListener("click", () => {
+        state.chartFilterName = "__ALL__";
+        state.chartFilterDate = "__ALL__";
+        buildChartFilters();
+        save();
+        renderChart();
+        toast("フィルターを解除しました");
+      });
+    }
+
     // export
     el("copyCsv").addEventListener("click", copyCsv);
     el("exportXlsx").addEventListener("click", exportExcel);
@@ -1448,6 +1594,7 @@
     window.addEventListener("resize", () => { renderChart(); renderPowerTable(); }, {passive:true});
 
     renderLogs();
+    buildChartFilters();
     recalc();
   }
 
