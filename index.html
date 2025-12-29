@@ -3,305 +3,318 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Poker Stack Logger</title>
+  <title>Poker Stack Logger v'25/12/29</title>
 
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
   <style>
-    :root {
-      --bg:#fff;
-      --card:#fff;
-      --bd:#e6e6e6;
-      --muted:#666;
-      --text:#111;
-      --soft:#f6f6f6;
-      --soft2:#f1f1f1;
-      --accent:#111;
-      --ok:#0b7;
-      --warn:#f7b;
+    :root{
+      --bg:#fff; --card:#fff; --bd:#e6e6e6; --muted:#666; --text:#111; --soft:#f6f6f6;
+      --accent:#111; --warn:#fff7e6; --warnbd:#ffe1a6;
+      --disabled:#f0f0f0; --disabledText:#888;
     }
-    * { box-sizing: border-box; }
-    body { font-family: -apple-system, system-ui, Segoe UI, Roboto, sans-serif; margin: 0; background:var(--bg); color:var(--text); }
-    header { position: sticky; top:0; z-index:20; background: rgba(255,255,255,0.92); backdrop-filter: blur(12px); border-bottom:1px solid var(--bd); }
-    .wrap { padding: 12px 14px 80px; max-width: 980px; margin: 0 auto; }
-    h1 { font-size: 16px; margin: 10px 0 8px; }
-    h2 { font-size: 14px; margin: 0 0 8px; color: #222; }
+    *{ box-sizing:border-box; }
+    body{ font-family:-apple-system,system-ui,Segoe UI,Roboto,sans-serif; margin:14px; background:var(--bg); color:var(--text); }
+    h1{ font-size:16px; margin:2px 0 10px; }
+    h2{ font-size:14px; margin:0 0 8px; color:#222; }
+    .hint{ font-size:12px; color:var(--muted); line-height:1.45; }
+    .mono{ font-variant-numeric: tabular-nums; font-feature-settings:"tnum"; }
+
+    .topbar{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .ver{ font-size:12px; color:#444; background:var(--soft); border:1px solid var(--bd); padding:4px 10px; border-radius:999px; }
 
     /* Tabs */
-    .tabs { display:flex; gap:8px; padding: 10px 14px; overflow:auto; }
-    .tab {
-      flex: 0 0 auto;
-      padding: 10px 12px;
-      border-radius: 999px;
-      border: 1px solid var(--bd);
-      background: var(--soft);
-      color:#111;
-      font-size: 14px;
-      line-height: 1;
-      user-select:none;
+    .tabbar{ display:flex; gap:8px; flex-wrap:nowrap; overflow:auto; padding:8px 0 2px; -webkit-overflow-scrolling:touch; }
+    .tabbtn{
+      white-space:nowrap; border:1px solid var(--bd); background:var(--soft);
+      padding:10px 12px; border-radius:999px; font-size:13px; cursor:pointer;
     }
-    .tab.active { background: var(--accent); color:#fff; border-color: var(--accent); }
+    .tabbtn.active{ background:var(--accent); color:#fff; border-color:var(--accent); }
 
-    /* Pages */
-    .pages { position: relative; }
-    .page { display:none; }
-    .page.active { display:block; }
+    /* Pages (swipe) */
+    .pages{
+      display:flex; gap:0; overflow:hidden; border-radius:16px;
+    }
+    .page{
+      min-width:100%;
+      padding:0;
+      transition:transform .25s ease;
+    }
+    .pageInner{ padding:0; }
 
-    .card { border:1px solid var(--bd); border-radius: 14px; padding: 12px; margin: 12px 0; background:var(--card); }
-    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; }
-    label { font-size: 12px; color: #444; display:block; margin-bottom:4px; }
-    input, select, button, textarea { font-size: 16px; padding: 10px; border-radius: 12px; border:1px solid #cfcfcf; background:#fff; }
-    input { width: 180px; }
-    input.small { width: 120px; }
-    select { width: 220px; }
-    textarea { width: 100%; min-height: 72px; resize: vertical; }
-    button { border:0; cursor:pointer; }
-    .btn { padding: 12px 14px; border-radius: 12px; }
-    .btn-primary { background:#111; color:#fff; }
-    .btn-ghost { background: var(--soft); color:#111; border:1px solid var(--bd); }
-    .btn-danger { background:#ffecec; color:#111; border:1px solid #ffd0d0; }
-    .btn-mini { padding: 10px 10px; font-size: 14px; border-radius: 12px; border:1px solid var(--bd); background: var(--soft); }
-    .btn-step { min-width: 88px; text-align:center; font-variant-numeric: tabular-nums; font-feature-settings:"tnum"; }
+    .card{ border:1px solid var(--bd); border-radius:16px; padding:12px; margin:12px 0; background:var(--card); }
+    label{ font-size:12px; color:#444; display:block; margin-bottom:4px; }
+    input, select, button, textarea{
+      font-size:16px; padding:10px; border-radius:12px; border:1px solid #cfcfcf;
+    }
+    input, select{ width:100%; }
+    textarea{ width:100%; min-height:72px; resize:vertical; }
 
-    .hint { font-size: 12px; color: var(--muted); line-height: 1.45; }
-    .mono { font-variant-numeric: tabular-nums; font-feature-settings:"tnum"; }
-    .big { font-size: 34px; font-weight: 850; letter-spacing: 0.4px; font-variant-numeric: tabular-nums; font-feature-settings:"tnum"; }
+    button{ border:0; cursor:pointer; }
+    .btn{ padding:12px 14px; border-radius:12px; }
+    .btn-primary{ background:var(--accent); color:#fff; }
+    .btn-ghost{ background:var(--soft); color:#111; border:1px solid var(--bd); }
+    .btn-danger{ background:#ffecec; color:#111; border:1px solid #ffd0d0; }
 
-    .metrics { display:flex; gap:14px; flex-wrap:wrap; align-items:center; }
-    .metric { font-size: 13px; color:#333; }
-    .metric b { font-size: 20px; font-variant-numeric: tabular-nums; font-feature-settings:"tnum"; }
+    .grid2{ display:grid; grid-template-columns:1fr; gap:10px; }
+    @media (min-width:720px){ .grid2{ grid-template-columns:1fr 1fr; } }
 
-    .pill { display:inline-block; padding: 2px 8px; border-radius: 999px; background: var(--soft); border:1px solid var(--bd); font-size: 12px; }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; }
+    .row.nowrap{ flex-wrap:nowrap; }
+    .col{ flex:1; min-width:0; }
+    .col.sm{ flex:0 0 120px; }
+    .col.md{ flex:0 0 160px; }
+    .col.lg{ flex:0 0 260px; }
 
-    .auto-off { opacity: 0.55; background: var(--soft2) !important; }
-    .checkline { display:flex; align-items:center; gap:8px; margin-top: 4px; }
-    .checkline input[type="checkbox"] { width:auto; padding:0; transform: scale(1.1); }
+    /* Force SB/BB/Ante same row even on narrow screens */
+    .blindsRow{ display:flex; gap:10px; flex-wrap:nowrap; }
+    .blindsRow > div{ flex:1; min-width:0; }
+
+    .metrics{ display:flex; gap:14px; flex-wrap:wrap; align-items:center; }
+    .metric{ font-size:13px; color:#333; }
+    .metric b{ font-size:20px; font-variant-numeric:tabular-nums; font-feature-settings:"tnum"; }
+    .big{ font-size:34px; font-weight:850; letter-spacing:.4px; font-variant-numeric:tabular-nums; font-feature-settings:"tnum"; }
+
+    .disabledField input, .disabledField select{
+      background:var(--disabled) !important;
+      color:var(--disabledText) !important;
+      border-color:#ddd !important;
+    }
+
+    /* Increment buttons under chips */
+    .incWrap{ margin-top:8px; }
+    .incGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:8px;
+      align-items:stretch;
+    }
+    .incCol{ display:flex; flex-direction:column; gap:8px; }
+    .incBtn{
+      background:var(--soft);
+      border:1px solid var(--bd);
+      border-radius:12px;
+      padding:12px 10px;
+      font-size:16px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+    .incBtn strong{ font-variant-numeric:tabular-nums; font-feature-settings:"tnum"; }
+    .incBtn.minus{ }
+    .incBtn.plus{ }
 
     /* Toast */
-    .toast {
-      position: fixed;
-      left: 50%;
-      bottom: 18px;
-      transform: translateX(-50%);
-      background: rgba(17,17,17,0.92);
-      color: #fff;
-      padding: 10px 12px;
-      border-radius: 999px;
-      font-size: 13px;
-      display: none;
-      z-index: 50;
-      max-width: 92vw;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    .toast{
+      position:fixed;
+      left:50%;
+      bottom:18px;
+      transform:translateX(-50%);
+      background:#111;
+      color:#fff;
+      padding:10px 12px;
+      border-radius:999px;
+      font-size:13px;
+      opacity:0;
+      pointer-events:none;
+      transition:opacity .2s ease;
+      z-index:9999;
     }
-    .toast.show { display:block; animation: pop 0.18s ease-out; }
-    @keyframes pop { from { transform: translateX(-50%) translateY(8px); opacity:0; } to { transform: translateX(-50%) translateY(0); opacity:1; } }
+    .toast.show{ opacity:0.95; }
 
     /* Chart */
-    canvas { width: 100%; height: 300px; border-radius: 14px; background:#fafafa; border:1px solid #eee; display:block; }
+    canvas{ width:100%; height:280px; border-radius:16px; background:#fafafa; border:1px solid #eee; display:block; }
 
     /* Table */
-    table { width:100%; border-collapse: collapse; }
-    th, td { border-top:1px solid #eee; padding:10px 6px; font-size: 13px; vertical-align: top; }
-    th { text-align:left; color:#555; font-weight:600; position: sticky; top: 62px; background: white; z-index: 10; }
-    .right { text-align:right; }
+    table{ width:100%; border-collapse:collapse; }
+    th, td{ border-top:1px solid #eee; padding:10px 6px; font-size:13px; vertical-align:top; }
+    th{ text-align:left; color:#555; font-weight:600; position:sticky; top:0; background:#fff; }
+    .right{ text-align:right; }
+    .pill{ display:inline-block; padding:2px 8px; border-radius:999px; background:var(--soft); border:1px solid var(--bd); font-size:12px; }
 
-    /* Power grid */
-    .powerBox { display:grid; grid-template-columns: 1fr; gap: 10px; }
-    @media (min-width: 860px){ .powerBox { grid-template-columns: 1.2fr 0.8fr; } }
+    .warn{ background:var(--warn); border:1px solid var(--warnbd); padding:10px 12px; border-radius:12px; }
 
-    .gridWrap { overflow:auto; border:1px solid var(--bd); border-radius: 14px; }
-    .handGrid { border-collapse: collapse; width: max-content; min-width: 520px; }
-    .handGrid th, .handGrid td {
-      border: 1px solid #e8e8e8;
-      padding: 6px 8px;
-      font-size: 12px;
-      text-align: center;
-      white-space: nowrap;
+    /* Power table loader/grid */
+    .powerBox{ display:grid; grid-template-columns:1fr; gap:10px; }
+    @media (min-width:720px){ .powerBox{ grid-template-columns: 1fr 1fr; } }
+
+    .powerGridWrap{ overflow:auto; border:1px solid var(--bd); border-radius:14px; }
+    .powerGrid{ border-collapse:collapse; width:max-content; min-width:100%; }
+    .powerGrid th, .powerGrid td{
+      border:1px solid #eee;
+      padding:6px 8px;
+      font-size:12px;
+      text-align:center;
+      white-space:nowrap;
+      background:#fff;
     }
-    .handGrid th { background: #f9f9f9; position: sticky; top:0; z-index:2; }
-    .handGrid th.left { left:0; z-index:3; position: sticky; }
-    .handGrid td.left { left:0; z-index:1; position: sticky; background:#fff; font-weight:600; }
-    .cellHi { outline: 2px solid #111; outline-offset: -2px; background: #fff2cc; }
-    .cellAI { background: #ffecec; font-weight:800; }
-    .cellLow { color:#999; }
-    .smallNote { font-size: 12px; color: #666; }
-    .textBtn { width: 100%; text-align:left; }
-    .textAreaSmall { min-height: 140px; }
-
-    /* Swipe hint */
-    .swipeHint { font-size: 12px; color:#777; margin-top: 2px; }
+    .powerGrid th{ background:#fafafa; position:sticky; top:0; z-index:2; }
+    .powerGrid td.hi{ background:#111; color:#fff; font-weight:700; }
+    .powerGrid td.muted{ color:#777; }
+    .small{ font-size:12px; color:#555; }
   </style>
 </head>
+
 <body>
-
-<header>
-  <div class="wrap" style="padding-bottom:0;">
-    <h1>Poker Stack Logger（最終版）</h1>
+  <div class="topbar">
+    <h1>Poker Stack Logger <span class="ver">v'25/12/29</span></h1>
   </div>
-  <div class="tabs" id="tabs">
-    <div class="tab active" data-page="input">入力</div>
-    <div class="tab" data-page="chart">グラフ</div>
-    <div class="tab" data-page="logs">ログ</div>
-    <div class="tab" data-page="power">パワー</div>
-  </div>
-</header>
 
-<div class="wrap">
-  <!-- TOP summary (共通表示) -->
-  <div class="card">
-    <div class="row" style="justify-content: space-between; align-items:center;">
-      <div>
-        <div class="hint">現在Chips</div>
-        <div class="big mono" id="chipsBig">0</div>
-      </div>
-      <div class="metrics">
-        <div class="metric">Dif Chips：<b id="difChips" class="mono">-</b></div>
-        <div class="metric">M Value：<b id="mValue" class="mono">-</b></div>
-        <div class="metric">Num Behind：<b id="behind" class="mono">-</b></div>
-        <div class="metric">Power：<b id="powerNum" class="mono">-</b></div>
-      </div>
-    </div>
-    <div class="hint" style="margin-top:8px;">
-      Dif = Chips − Initial − (Busted×Initial) ／ M = Chips ÷ (SB + BB + BB ante) ／ Power = M × (Num Behind)
-    </div>
+  <div class="tabbar" id="tabbar">
+    <button class="tabbtn active" data-tab="0">ゲーム情報</button>
+    <button class="tabbtn" data-tab="1">入力</button>
+    <button class="tabbtn" data-tab="2">グラフ</button>
+    <button class="tabbtn" data-tab="3">ログ</button>
+    <button class="tabbtn" data-tab="4">パワー</button>
   </div>
 
   <div class="pages" id="pages">
-
-    <!-- ===== Input Page ===== -->
-    <section class="page active" id="page-input">
+    <!-- 0: Game Info -->
+    <section class="page"><div class="pageInner">
       <div class="card">
-        <h2>インプット</h2>
-
-        <div class="row">
+        <h2>ゲーム情報</h2>
+        <div class="grid2">
           <div>
             <label>Name（自由記述）</label>
-            <input id="name" placeholder="例）12/25 Xmasトナメ" />
+            <input id="name" placeholder="例）12/25 Xmasトナメ / リング" />
           </div>
+          <div class="row nowrap">
+            <div class="col">
+              <label>Initial Chips（初期スタック）</label>
+              <input id="initial" type="number" inputmode="numeric" min="0" step="1"/>
+            </div>
+            <div class="col">
+              <label>飛んだ回数</label>
+              <div class="row nowrap" style="align-items:stretch;">
+                <button class="btn btn-ghost" id="bustedMinus" style="padding:10px 12px;">−</button>
+                <input id="busted" class="mono" type="number" inputmode="numeric" min="0" step="1"/>
+                <button class="btn btn-ghost" id="bustedPlus" style="padding:10px 12px;">＋</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="hint" style="margin-top:8px;">
+          Dif Chips = Chips − InitialChips − (BustedCount × InitialChips)
+        </div>
+      </div>
+    </div></section>
+
+    <!-- 1: Input -->
+    <section class="page"><div class="pageInner">
+      <div class="card">
+        <div class="row" style="justify-content:space-between; align-items:center;">
+          <div>
+            <div class="hint">現在Chips</div>
+            <div class="big mono" id="chipsBig">0</div>
+          </div>
+          <div class="metrics">
+            <div class="metric">Dif Chips：<b id="difChips" class="mono">-</b></div>
+            <div class="metric">M Value：<b id="mValue" class="mono">-</b></div>
+          </div>
+        </div>
+        <div class="hint" style="margin-top:8px;">
+          M = Chips ÷ (SB + BB + BB ante)
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>入力</h2>
+
+        <div class="grid2">
           <div>
             <label>Chips（現在）</label>
             <input id="chips" type="number" inputmode="numeric" min="0" step="1" />
-          </div>
-        </div>
-
-        <!-- Chip step buttons directly under Chips -->
-        <div style="height:10px;"></div>
-        <div class="row" style="align-items:center;">
-          <div class="pill">増減（Chipsのすぐ下）</div>
-          <div class="hint">押している間に単位が変わらないよう、候補は「Chips手入力」または「記録」の時だけ更新</div>
-        </div>
-        <div class="row" id="stepButtons" style="margin-top:6px;">
-          <!-- JS inject: -A -B -C +C +B +A -->
-        </div>
-
-        <div style="height:14px;"></div>
-
-        <div class="row">
-          <div>
-            <label>Initial Chips（初期スタック）</label>
-            <input id="initial" class="small" type="number" inputmode="numeric" min="0" step="1" />
-          </div>
-
-          <div>
-            <label>飛んだ回数（Busted）</label>
-            <div class="row" style="gap:8px; align-items:center;">
-              <button class="btn-mini" id="bustedMinus">−</button>
-              <input id="busted" class="small" type="number" inputmode="numeric" min="0" step="1" />
-              <button class="btn-mini" id="bustedPlus">＋</button>
+            <div class="incWrap">
+              <div class="incGrid">
+                <div class="incCol" id="incMinusCol"></div>
+                <div class="incCol" id="incPlusCol"></div>
+              </div>
+              <div class="hint" style="margin-top:6px;">
+                ※ 数値は現在Chipsに合わせて自動で変わります
+              </div>
             </div>
           </div>
-        </div>
 
-        <div style="height:10px;"></div>
-
-        <div class="row">
           <div>
-            <label>SB</label>
-            <input id="sb" class="small" type="number" inputmode="numeric" min="0" step="1" />
-          </div>
-          <div>
-            <label>BB</label>
-            <input id="bb" class="small" type="number" inputmode="numeric" min="1" step="1" />
-            <div class="checkline">
-              <input type="checkbox" id="bbIs2sb" />
-              <span class="hint">BB = 2×SB</span>
-            </div>
-          </div>
-          <div>
-            <label>BB ante</label>
-            <input id="bbante" class="small" type="number" inputmode="numeric" min="0" step="1" />
-            <div class="checkline">
-              <input type="checkbox" id="anteIsBb" />
-              <span class="hint">BB ante = BB</span>
-            </div>
+            <label>メモ（何があって変動したか）</label>
+            <textarea id="memo" placeholder="例）BTNでAQsオールイン勝ち / SBでリスチ負け など"></textarea>
           </div>
         </div>
 
-        <div style="height:10px;"></div>
+        <div style="height:10px"></div>
 
         <div>
-          <label>メモ（何があって変動したか）</label>
-          <textarea id="memo" placeholder="例）BTNでAQsオールイン勝ち / SBでリスチ負け など"></textarea>
+          <div class="row nowrap" style="align-items:center; justify-content:flex-start; gap:14px; margin-bottom:6px;">
+            <label style="margin:0;">ブラインド簡略入力</label>
+            <label class="hint" style="margin:0;">
+              <input type="checkbox" id="lockBB2SB" />
+              BB = 2×SB
+            </label>
+            <label class="hint" style="margin:0;">
+              <input type="checkbox" id="lockAnteBB" />
+              BB ante = BB
+            </label>
+          </div>
+
+          <div class="blindsRow">
+            <div id="sbWrap">
+              <label>SB</label>
+              <input id="sb" class="mono" type="number" inputmode="numeric" min="0" step="1" />
+            </div>
+            <div id="bbWrap">
+              <label>BB</label>
+              <input id="bb" class="mono" type="number" inputmode="numeric" min="1" step="1" />
+            </div>
+            <div id="anteWrap">
+              <label>BB ante</label>
+              <input id="bbante" class="mono" type="number" inputmode="numeric" min="0" step="1" />
+            </div>
+          </div>
         </div>
 
-        <div style="height:10px;"></div>
+        <div style="height:10px"></div>
 
         <div class="row">
           <button class="btn btn-primary" id="record">記録（ログ追加）</button>
           <button class="btn btn-ghost" id="undo">直近ログを削除</button>
+          <div style="flex:1"></div>
           <button class="btn btn-danger" id="clearAll">全消去</button>
         </div>
-
-        <div class="swipeHint">※ 画面端からのスワイプはiPhoneの戻る操作と干渉する場合があります。中央付近から左右にスワイプしてください。</div>
       </div>
-    </section>
+    </div></section>
 
-    <!-- ===== Chart Page ===== -->
-    <section class="page" id="page-chart">
+    <!-- 2: Chart -->
+    <section class="page"><div class="pageInner">
       <div class="card">
-        <h2>推移グラフ（Chipsのみ）</h2>
-
-        <div class="row" style="margin: 8px 0 10px;">
-          <div>
-            <label>表示：Name</label>
-            <select id="chartName" style="width: 260px;"></select>
-          </div>
-          <div>
-            <label>表示：Date</label>
-            <select id="chartDate" style="width: 200px;"></select>
-          </div>
-          <div style="flex:1"></div>
-          <button class="btn btn-ghost" id="chartReset">表示リセット</button>
+        <h2>推移グラフ（Chips）</h2>
+        <div class="hint" style="margin-bottom:8px;">
+          横軸：記録時刻（時間間隔に連動）／ 縦軸：Chips（目盛り付き）
         </div>
-
         <canvas id="chart"></canvas>
-
         <div class="hint" style="margin-top:8px;">
-          縦軸：Chips（レンジは 0〜2×Initial を基本に、突き抜けそうなら自動拡張）／ 横軸：記録時刻
+          表示レンジ：基本は 0〜2×Initial。突き抜けそうになったら自動で広げます（最大/最小がレンジの約80%付近に来るよう調整）。
         </div>
       </div>
-    </section>
+    </div></section>
 
-    <!-- ===== Logs Page ===== -->
-    <section class="page" id="page-logs">
+    <!-- 3: Logs -->
+    <section class="page"><div class="pageInner">
       <div class="card">
         <div class="row" style="justify-content: space-between; align-items:center;">
-          <h2 style="margin:0;">アウトプット（ログ一覧）</h2>
+          <h2 style="margin:0;">ログ一覧</h2>
           <div class="pill">最新が上</div>
         </div>
 
         <div class="row" style="margin-top:8px;">
-          <button class="btn btn-ghost" id="copyCsv">CSVをコピー（ログ一覧）</button>
+          <button class="btn btn-primary" id="exportXlsx">Excelにエクスポート（DL）</button>
           <div style="flex:1"></div>
-          <button class="btn btn-danger" id="exportJson">バックアップJSON（保存）</button>
-          <button class="btn btn-ghost" id="importJson">復元JSON（読込）</button>
+          <button class="btn btn-ghost" id="copyCsv">CSVをコピー</button>
         </div>
 
-        <div class="hint" style="margin-top:8px;">
-          ※ OneDriveへ自動アップロードは、ブラウザだけで任意アカウントに直接保存するには認証が必要です（Power Automate等で対応可能）。
+        <div class="warn hint" style="margin-top:10px;">
+          OneDriveへ“任意アカウントに自動アップロード”はブラウザだけでは認証が必要です。<br>
+          （必要なら）Power Automate等で「受け取ったファイルをOneDriveに保存」フロー化すると実現できます。
         </div>
 
         <div style="overflow:auto; max-height: 520px; margin-top:10px;">
@@ -314,10 +327,10 @@
                 <th class="right">Chips</th>
                 <th class="right">Initial</th>
                 <th class="right">Busted</th>
-                <th class="right">Dif</th>
+                <th class="right">Dif Chips</th>
                 <th class="right">SB</th>
                 <th class="right">BB</th>
-                <th class="right">Ante</th>
+                <th class="right">BB ante</th>
                 <th class="right">M</th>
                 <th>Memo</th>
               </tr>
@@ -326,16 +339,19 @@
           </table>
         </div>
       </div>
-    </section>
+    </div></section>
 
-    <!-- ===== Power Page ===== -->
-    <section class="page" id="page-power">
+    <!-- 4: Power -->
+    <section class="page"><div class="pageInner">
       <div class="card">
-        <h2>パワー（M × 後ろ人数）＆ オールイン表</h2>
+        <h2>パワー（M値 × 後ろの人数）</h2>
+        <div class="hint" style="margin-bottom:8px;">
+          Positionはここでのみ使用します。Num Behindは table MAX不要で計算できます（8max想定）。
+        </div>
 
-        <div class="row">
+        <div class="grid2">
           <div>
-            <label>Position（ここに移動）</label>
+            <label>Position（8人MAX想定）</label>
             <select id="position">
               <option>UTG</option>
               <option>UTG+1</option>
@@ -346,81 +362,60 @@
               <option>SB</option>
               <option>BB</option>
             </select>
-            <div class="hint">※ 8人MAX想定（table maxは削除）</div>
-          </div>
-          <div>
-            <label>Num Behind（自動）</label>
-            <input id="behindRead" class="small auto-off" disabled />
-          </div>
-          <div>
-            <label>M（自動）</label>
-            <input id="mRead" class="small auto-off" disabled />
-          </div>
-          <div>
-            <label>Power（自動）</label>
-            <input id="powerRead" class="small auto-off" disabled />
-          </div>
-        </div>
 
-        <div class="powerBox" style="margin-top:10px;">
-          <div class="gridWrap">
-            <table class="handGrid" id="handGrid"></table>
-          </div>
-
-          <div class="card" style="margin:0;">
-            <h2 style="margin-bottom:6px;">表データの貼り付け（自分用）</h2>
-            <div class="hint">
-              この表（数値表）は書籍等の著作物である可能性が高いため、アプリに初期値として同梱しません。<br>
-              あなたが所持する資料から「自分用に」数値を貼り付ければ、Power以上のマスをハイライトします。
+            <div class="card" style="margin:12px 0 0;">
+              <div class="metrics">
+                <div class="metric">Num Behind：<b id="behind" class="mono">-</b></div>
+                <div class="metric">M Value：<b id="mValue2" class="mono">-</b></div>
+                <div class="metric">Power：<b id="powerNum" class="mono">-</b></div>
+              </div>
+              <div class="hint" style="margin-top:8px;">
+                Power = M × (Num Behind + 1)
+              </div>
             </div>
-            <div style="height:8px;"></div>
-            <button class="btn btn-ghost textBtn" id="showPaste">
-              ▶ ここを押して貼り付け欄を開く（TSV/CSV）
-            </button>
-            <div id="pasteArea" style="display:none; margin-top:8px;">
-              <textarea id="gridPaste" class="textAreaSmall" placeholder=
-"貼り付け例（TSV推奨）
-(左上は空欄)  A  K  Q ... 2
-A  AI AI ... 24
-K  AI AI ... 9
-...
-※ 数値または 'AI' を入れてください。"></textarea>
-              <div class="row" style="margin-top:8px;">
-                <button class="btn btn-primary" id="applyGrid">貼り付けを反映</button>
-                <button class="btn btn-danger" id="clearGrid">表データを消去</button>
-              </div>
-              <div class="smallNote" style="margin-top:6px;">
-                ・区切りはタブ（TSV）でもカンマ（CSV）でもOK<br>
-                ・AI は 80以上扱いとして強調表示
-              </div>
+          </div>
+
+          <div>
+            <label>パワーナンバー表データ（貼り付け）</label>
+            <textarea id="powerData" placeholder="例：13行×13列のCSV（AIや数値）を貼り付け → 『表に反映』"></textarea>
+            <div class="row" style="margin-top:8px;">
+              <button class="btn btn-primary" id="applyPowerData">表に反映</button>
+              <button class="btn btn-ghost" id="clearPowerData">データ消去</button>
+            </div>
+            <div class="hint" style="margin-top:8px;">
+              ※ こちらから書籍画像の表をそのまま転記はできないため、あなたが許諾/権利のある表データを貼り付けて使う方式にしています。
             </div>
           </div>
         </div>
 
-        <div class="swipeHint">左右スワイプで「入力／グラフ／ログ／パワー」を切り替えできます。</div>
+        <div class="card" style="margin-top:12px;">
+          <h2 style="margin-bottom:8px;">パワーナンバー表（ハイライト）</h2>
+          <div class="hint" style="margin-bottom:8px;">
+            「Power以上の点数」のセルをハイライトします（基準：セル値 ≥ Power）。<br>
+            ※ AIセルは常にハイライト扱いにできます（設定：ON固定）
+          </div>
+          <div class="powerGridWrap">
+            <table class="powerGrid" id="powerGrid"></table>
+          </div>
+        </div>
+
       </div>
-    </section>
-
+    </div></section>
   </div>
-</div>
 
-<div class="toast" id="toast">Saved</div>
+  <div class="toast" id="toast">記録しました ✓</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
 
 <script>
 (() => {
-  const LS_KEY = "poker_stack_logger_final_v1";
+  const LS_KEY = "poker_stack_logger_v7_251229";
 
   const POSITIONS = ["UTG","UTG+1","LJ","HJ","CO","BTN","SB","BB"];
-  const RANKS = ["A","K","Q","J","T","9","8","7","6","5","4","3","2"];
 
   const el = (id) => document.getElementById(id);
 
-  // Tabs/pages
-  const tabsEl = el("tabs");
-  const pagesEl = el("pages");
-  const tabEls = Array.from(tabsEl.querySelectorAll(".tab"));
-
-  // Inputs
   const inputs = {
     name: el("name"),
     chips: el("chips"),
@@ -430,28 +425,42 @@ K  AI AI ... 9
     bb: el("bb"),
     bbante: el("bbante"),
     memo: el("memo"),
-    bbIs2sb: el("bbIs2sb"),
-    anteIsBb: el("anteIsBb"),
     position: el("position"),
 
-    // Chart filters
-    chartName: el("chartName"),
-    chartDate: el("chartDate"),
-    chartReset: el("chartReset"),
+    lockBB2SB: el("lockBB2SB"),
+    lockAnteBB: el("lockAnteBB"),
 
-    // Power reads
-    behindRead: el("behindRead"),
-    mRead: el("mRead"),
-    powerRead: el("powerRead"),
+    powerData: el("powerData"),
+  };
+
+  const wraps = {
+    sb: el("sbWrap"),
+    bb: el("bbWrap"),
+    ante: el("anteWrap"),
   };
 
   const ui = {
     chipsBig: el("chipsBig"),
     difChips: el("difChips"),
     mValue: el("mValue"),
+    mValue2: el("mValue2"),
     behind: el("behind"),
     powerNum: el("powerNum"),
 
+    logBody: el("logBody"),
+    chart: el("chart"),
+
+    incMinusCol: el("incMinusCol"),
+    incPlusCol: el("incPlusCol"),
+
+    exportXlsx: el("exportXlsx"),
+    copyCsv: el("copyCsv"),
+
+    toast: el("toast"),
+    powerGrid: el("powerGrid"),
+  };
+
+  const btn = {
     record: el("record"),
     undo: el("undo"),
     clearAll: el("clearAll"),
@@ -459,24 +468,14 @@ K  AI AI ... 9
     bustedMinus: el("bustedMinus"),
     bustedPlus: el("bustedPlus"),
 
-    stepButtons: el("stepButtons"),
-
-    chart: el("chart"),
-    logBody: el("logBody"),
-    copyCsv: el("copyCsv"),
-    exportJson: el("exportJson"),
-    importJson: el("importJson"),
-
-    toast: el("toast"),
-
-    // Power
-    handGrid: el("handGrid"),
-    showPaste: el("showPaste"),
-    pasteArea: el("pasteArea"),
-    gridPaste: el("gridPaste"),
-    applyGrid: el("applyGrid"),
-    clearGrid: el("clearGrid"),
+    applyPowerData: el("applyPowerData"),
+    clearPowerData: el("clearPowerData"),
   };
+
+  const tabbar = el("tabbar");
+  const pages = el("pages");
+  const pageEls = Array.from(document.querySelectorAll(".page"));
+  const tabBtns = Array.from(document.querySelectorAll(".tabbtn"));
 
   const ctx = ui.chart.getContext("2d");
 
@@ -496,371 +495,342 @@ K  AI AI ... 9
     bb: 100,
     bbante: 0,
     memo: "",
-    bbIs2sb: false,
-    anteIsBb: false,
-
     position: "UTG",
-
-    chartFilter: { name: "__ALL__", date: "__ALL__" },
+    locks: { bb2sb: false, anteEqBB: false },
 
     logs: [],
 
-    // Power table data (user pasted)
-    // stored as { "A-A": "AI" or number, ... }
-    powerGrid: {}
+    // Chart dynamic bounds (sticky expand)
+    chartBounds: { yMin: 0, yMax: 20000 },
+
+    // Power table data: 13x13 matrix of string ("AI" or number)
+    powerTable: null, // { ranks:[...], grid:[[...]] }
   };
 
   let state = load();
+  let currentTab = 0;
+
+  function structuredCloneSafe(x){
+    return JSON.parse(JSON.stringify(x));
+  }
 
   function load() {
     try {
       const raw = localStorage.getItem(LS_KEY);
-      if (!raw) return structuredClone(defaultState);
+      if (!raw) return structuredCloneSafe(defaultState);
       const parsed = JSON.parse(raw);
 
       if (!Array.isArray(parsed.logs)) parsed.logs = [];
-      if (!parsed.chartFilter) parsed.chartFilter = { name:"__ALL__", date:"__ALL__" };
-      if (!parsed.powerGrid || typeof parsed.powerGrid !== "object") parsed.powerGrid = {};
-
-      return { ...structuredClone(defaultState), ...parsed };
+      if (!parsed.locks) parsed.locks = { bb2sb:false, anteEqBB:false };
+      if (!parsed.chartBounds) parsed.chartBounds = { yMin: 0, yMax: (parsed.initial||10000)*2 };
+      return { ...structuredCloneSafe(defaultState), ...parsed };
     } catch {
-      return structuredClone(defaultState);
+      return structuredCloneSafe(defaultState);
     }
   }
-
-  function save() { localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+  function save(){ localStorage.setItem(LS_KEY, JSON.stringify(state)); }
 
   function numVal(input, fallback=0) {
     const v = Number(input.value);
     return Number.isFinite(v) ? v : fallback;
   }
-  function clamp(n, min, max) { return Math.min(max, Math.max(min, n)); }
+  function clamp(n, min, max){ return Math.min(max, Math.max(min, n)); }
 
-  function calcDif(chips, initial, bustedCount) {
+  function calcDif(chips, initial, bustedCount){
     const ini = Math.max(0, initial || 0);
     const bust = Math.max(0, Math.floor(bustedCount || 0));
     return chips - ini - (bust * ini);
   }
-  function calcM(chips, sb, bb, bbante) {
+  function calcM(chips, sb, bb, bbante){
     const cost = (sb||0) + (bb||0) + (bbante||0);
     return (cost > 0) ? (chips / cost) : NaN;
   }
-  function calcBehind(position) {
+  function calcBehind8max(position){
     const idx = POSITIONS.indexOf(position);
     if (idx < 0) return NaN;
-    return Math.max(0, 7 - idx); // 8-max fixed
+    return Math.max(0, 7 - idx); // 8max想定
+  }
+  function calcPower(m, behind){
+    if (!Number.isFinite(m) || !Number.isFinite(behind)) return NaN;
+    return m * (behind + 1);
   }
 
-  // ===== Nice rounding (2 significant digits)
-  // ceil to 2 significant digits; handles negatives via sign.
-  function ceilSig2(x) {
-    if (!Number.isFinite(x) || x === 0) return 0;
-    const sign = x < 0 ? -1 : 1;
-    const v = Math.abs(x);
-    const p = Math.floor(Math.log10(v));
-    const scale = Math.pow(10, Math.max(0, p - 1)); // keep 2 sig digits
-    const n = Math.ceil(v / scale) * scale;
-    return sign * n;
-  }
-  function floorSig2(x) {
-    if (!Number.isFinite(x) || x === 0) return 0;
-    const sign = x < 0 ? -1 : 1;
-    const v = Math.abs(x);
-    const p = Math.floor(Math.log10(v));
-    const scale = Math.pow(10, Math.max(0, p - 1));
-    const n = Math.floor(v / scale) * scale;
-    return sign * n;
-  }
+  // --- Rounding: 2 significant digits, multiple of 1 or 5 (nice numbers)
+  function niceStep2Sig(v){
+    const x = Math.abs(v);
+    if (x === 0) return 1;
 
-  // ===== Step buttons under Chips (±A/±B/±C)
-  // Candidates based on current chips (like 10^n / 10^(n-1) / 10^(n-2))
-  function computeStepTriplet(chips) {
-    const c = Math.max(0, Math.floor(chips || 0));
-    if (c < 100) return [100, 10, 1];
-    const p = Math.floor(Math.log10(c));
-    const a = Math.pow(10, p);       // e.g. 12400 -> 10000
-    const b = Math.pow(10, p-1);     // 1000
-    const d = Math.pow(10, p-2);     // 100
-    return [a, b, d].map(x => Math.max(1, x));
+    // We want a "step" that has ~2 significant digits and uses 1 or 5 multiples.
+    // We'll create a base = 10^(digits-2), then choose multiplier among {1,5,10,50,...} to get close.
+    const exp = Math.floor(Math.log10(x));
+    const base = Math.pow(10, Math.max(0, exp - 1)); // keep 2 sig digits
+    const m = x / base;
+
+    // pick nearest among 10, 50, 100 (i.e. 1,5,10 within 2 digits scaling)
+    let mul;
+    if (m <= 12) mul = 10;
+    else if (m <= 70) mul = 50;
+    else mul = 100;
+
+    return mul * base;
   }
 
-  // We freeze step set while user taps buttons; only update when chips is typed or log recorded
-  let stepTriplet = computeStepTriplet(state.chips);
+  function niceCeil(v){
+    const step = niceStep2Sig(v);
+    return Math.ceil(v / step) * step;
+  }
+  function niceFloor(v){
+    const step = niceStep2Sig(v);
+    return Math.floor(v / step) * step;
+  }
 
-  function renderStepButtons() {
-    ui.stepButtons.innerHTML = "";
+  // --- Increment buttons under chips
+  function computeIncSteps(chips){
+    const c = Math.max(0, Math.floor(chips||0));
+    // choose 3 magnitudes like 10000/1000/100, or 100/10/1
+    if (c >= 100000) return [100000, 10000, 1000];
+    if (c >= 10000)  return [10000, 1000, 100];
+    if (c >= 1000)   return [1000, 100, 10];
+    if (c >= 100)    return [100, 10, 1];
+    if (c >= 10)     return [10, 5, 1];
+    return [5, 1, 1];
+  }
+  function renderIncButtons(){
+    ui.incMinusCol.innerHTML = "";
+    ui.incPlusCol.innerHTML = "";
 
-    const [A,B,C] = stepTriplet;
-    const mk = (label, delta) => {
-      const btn = document.createElement("button");
-      btn.className = "btn-mini btn-step";
-      btn.textContent = label;
-      btn.addEventListener("click", () => {
-        state.chips = Math.max(0, state.chips + delta);
+    const steps = computeIncSteps(state.chips);
+    const unique = Array.from(new Set(steps));
+
+    // ensure 3 buttons: if duplicates, fill with smaller
+    let s = unique.slice(0,3);
+    while (s.length < 3){
+      const last = s[s.length-1] || 1;
+      s.push(Math.max(1, Math.floor(last/10)));
+      s = Array.from(new Set(s));
+      if (s.length > 3) s = s.slice(0,3);
+      if (s.length === 1 && s[0] === 1) { while(s.length<3) s.push(1); break; }
+    }
+    // Sort descending for "big → small"
+    s = s.slice(0,3).sort((a,b)=>b-a);
+
+    for (const step of s){
+      const b1 = document.createElement("button");
+      b1.className = "incBtn minus";
+      b1.innerHTML = `<span>−</span><strong class="mono">${fmtInt(step)}</strong>`;
+      b1.addEventListener("click", () => {
+        state.chips = Math.max(0, state.chips - step);
         inputs.chips.value = state.chips;
-        recalcAndRender(false); // do not refresh triplet here
+        recalcAndRender();
       });
-      return btn;
-    };
+      ui.incMinusCol.appendChild(b1);
 
-    // order: -A -B -C +C +B +A (your request)
-    ui.stepButtons.appendChild(mk(`−${fmtInt(A)}`, -A));
-    ui.stepButtons.appendChild(mk(`−${fmtInt(B)}`, -B));
-    ui.stepButtons.appendChild(mk(`−${fmtInt(C)}`, -C));
-    ui.stepButtons.appendChild(mk(`＋${fmtInt(C)}`, +C));
-    ui.stepButtons.appendChild(mk(`＋${fmtInt(B)}`, +B));
-    ui.stepButtons.appendChild(mk(`＋${fmtInt(A)}`, +A));
+      const b2 = document.createElement("button");
+      b2.className = "incBtn plus";
+      b2.innerHTML = `<span>＋</span><strong class="mono">${fmtInt(step)}</strong>`;
+      b2.addEventListener("click", () => {
+        state.chips = Math.max(0, state.chips + step);
+        inputs.chips.value = state.chips;
+        recalcAndRender();
+      });
+      ui.incPlusCol.appendChild(b2);
+    }
   }
 
-  function refreshStepTripletFromChips() {
-    stepTriplet = computeStepTriplet(state.chips);
-    renderStepButtons();
-  }
-
-  // ===== Toast
+  // --- Toast
   let toastTimer = null;
-  function showToast(msg) {
+  function showToast(msg){
     ui.toast.textContent = msg;
     ui.toast.classList.add("show");
     if (toastTimer) clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => ui.toast.classList.remove("show"), 1200);
+    toastTimer = setTimeout(()=> ui.toast.classList.remove("show"), 1200);
   }
 
-  // ===== Auto input toggles (BB=2SB, Ante=BB)
-  function applyAutoLocks() {
-    // BB = 2*SB => lock BB
-    if (inputs.bbIs2sb.checked) {
-      const sb = Math.max(0, numVal(inputs.sb, state.sb));
-      const bb = sb * 2;
-      inputs.bb.value = bb;
-      inputs.bb.disabled = true;
-      inputs.bb.classList.add("auto-off");
-    } else {
-      inputs.bb.disabled = false;
-      inputs.bb.classList.remove("auto-off");
-    }
+  // --- BB locks (and gray-out)
+  function applyLocksUI(){
+    // BB = 2*SB locks BB
+    const lockBB = !!state.locks.bb2sb;
+    const lockAnte = !!state.locks.anteEqBB;
 
-    // Ante = BB => lock ante
-    if (inputs.anteIsBb.checked) {
-      const bb = Math.max(0, numVal(inputs.bb, state.bb));
-      inputs.bbante.value = bb;
-      inputs.bbante.disabled = true;
-      inputs.bbante.classList.add("auto-off");
-    } else {
-      inputs.bbante.disabled = false;
-      inputs.bbante.classList.remove("auto-off");
+    inputs.lockBB2SB.checked = lockBB;
+    inputs.lockAnteBB.checked = lockAnte;
+
+    // enable/disable fields and gray out wrapper
+    inputs.bb.disabled = lockBB;
+    wraps.bb.classList.toggle("disabledField", lockBB);
+
+    inputs.bbante.disabled = lockAnte;
+    wraps.ante.classList.toggle("disabledField", lockAnte);
+  }
+
+  function enforceLocks(){
+    // If BB=2SB
+    if (state.locks.bb2sb){
+      const sb = Math.max(0, state.sb);
+      state.bb = Math.max(1, sb * 2);
+      inputs.bb.value = state.bb;
+    }
+    // If ante=bb
+    if (state.locks.anteEqBB){
+      state.bbante = Math.max(0, state.bb);
+      inputs.bbante.value = state.bbante;
     }
   }
 
-  // ===== Chart: canvas sizing & ticks
-  function resizeCanvasToDisplaySize(canvas, ctx) {
+  // --- Chart rendering helpers (hi-dpi)
+  function resizeCanvasToDisplaySize(canvas, ctx){
     const dpr = window.devicePixelRatio || 1;
     const rect = canvas.getBoundingClientRect();
-    const displayWidth = Math.max(1, Math.round(rect.width * dpr));
-    const displayHeight = Math.max(1, Math.round(rect.height * dpr));
-    if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
-      canvas.width = displayWidth;
-      canvas.height = displayHeight;
+    const w = Math.max(1, Math.round(rect.width * dpr));
+    const h = Math.max(1, Math.round(rect.height * dpr));
+    if (canvas.width !== w || canvas.height !== h){
+      canvas.width = w; canvas.height = h;
       ctx.setTransform(1,0,0,1,0,0);
     }
   }
 
-  function getUniqueNames(logs) {
-    const set = new Set();
-    for (const r of logs) {
-      const n = (r.name || "").trim();
-      if (n) set.add(n);
+  // --- Chart bounds: baseline 0..2*initial, expand when needed.
+  function initChartBoundsIfNeeded(){
+    const ini = Math.max(1, state.initial || 1);
+    if (!state.chartBounds || !Number.isFinite(state.chartBounds.yMax)){
+      state.chartBounds = { yMin: 0, yMax: ini * 2 };
     }
-    return Array.from(set).sort((a,b)=>a.localeCompare(b,"ja"));
-  }
-  function getUniqueDatesForName(logs, name) {
-    const set = new Set();
-    for (const r of logs) {
-      if (name !== "__ALL__" && ((r.name || "").trim() !== name)) continue;
-      if (r.date) set.add(r.date);
-    }
-    return Array.from(set).sort().reverse();
-  }
-  function fillSelect(selectEl, items, currentValue, allLabel) {
-    selectEl.innerHTML = "";
-    const optAll = document.createElement("option");
-    optAll.value = "__ALL__";
-    optAll.textContent = allLabel;
-    selectEl.appendChild(optAll);
-    for (const v of items) {
-      const opt = document.createElement("option");
-      opt.value = v;
-      opt.textContent = v;
-      selectEl.appendChild(opt);
-    }
-    const values = new Set(["__ALL__", ...items]);
-    selectEl.value = values.has(currentValue) ? currentValue : "__ALL__";
-  }
-  function updateChartFilterUI() {
-    const names = getUniqueNames(state.logs);
-    fillSelect(inputs.chartName, names, state.chartFilter.name, "すべてのName");
-
-    state.chartFilter.name = inputs.chartName.value;
-
-    const dates = getUniqueDatesForName(state.logs, state.chartFilter.name);
-    fillSelect(inputs.chartDate, dates, state.chartFilter.date, "すべての日付");
-    state.chartFilter.date = inputs.chartDate.value;
-  }
-  function applyChartFilter(logs) {
-    const f = state.chartFilter;
-    return logs.filter(r => {
-      if (f.name !== "__ALL__" && ((r.name || "").trim() !== f.name)) return false;
-      if (f.date !== "__ALL__" && (r.date !== f.date)) return false;
-      return true;
-    });
+    // ensure at least baseline
+    state.chartBounds.yMin = Math.min(state.chartBounds.yMin, 0);
+    state.chartBounds.yMax = Math.max(state.chartBounds.yMax, ini * 2);
   }
 
-  function niceTickStep(range) {
-    // range -> pick 2sig digit-ish step
-    const r = Math.max(1, range);
-    const raw = r / 4; // about 4 ticks
-    const step = ceilSig2(raw);
-    return Math.max(1, step);
-  }
+  function updateChartBoundsForObserved(observedMin, observedMax){
+    initChartBoundsIfNeeded();
 
-  // Chart range logic per your spec:
-  // start 0..2*Initial; expand if observedMax > 0.8*Ymax => Ymax = ceilSig2(observedMax / 0.8)
-  // and if observedMin < 0.8*Ymin => Ymin = floorSig2(observedMin / 0.8)
-  // never shrink automatically.
-  function computeChartRange(chipsArr, initial) {
-    const observedMax = Math.max(...chipsArr);
-    const observedMin = Math.min(...chipsArr);
+    let yMin = state.chartBounds.yMin;
+    let yMax = state.chartBounds.yMax;
+    if (!Number.isFinite(yMin)) yMin = 0;
+    if (!Number.isFinite(yMax)) yMax = Math.max(1, (state.initial||10000)*2);
 
-    // base
-    let yMin = 0;
-    let yMax = Math.max(1, (Math.max(0, initial || 0) * 2));
-
-    // expand up
-    if (observedMax > 0.8 * yMax) {
-      const target = observedMax / 0.8;
-      yMax = ceilSig2(target);
-      if (yMax === 0) yMax = 1;
+    // Expand upward if observedMax > 0.8*yMax
+    if (observedMax > 0.8 * yMax){
+      const targetMax = observedMax / 0.8;  // put max around 80% of top
+      yMax = niceCeil(targetMax);
     }
 
-    // expand down (when negative happens)
-    // For yMin=0, 0.8*yMin = 0, so any negative triggers.
-    if (observedMin < 0.8 * yMin) {
-      const target = observedMin / 0.8; // negative
-      yMin = floorSig2(target);
+    // Expand downward if observedMin < 0.8*yMin
+    // (if yMin=0, any negative triggers expansion)
+    if (observedMin < 0.8 * yMin){
+      const targetMin = observedMin / 0.8;  // put min around 80% of bottom
+      yMin = niceFloor(targetMin);
     }
 
-    // ensure not equal
-    if (yMax <= yMin) yMax = yMin + 1;
+    // Safety: if too narrow, pad
+    if (yMax - yMin < 10){
+      yMax += 10; yMin -= 10;
+    }
 
-    return { yMin, yMax };
+    // Sticky: only expand; never shrink automatically
+    state.chartBounds.yMin = Math.min(state.chartBounds.yMin, yMin);
+    state.chartBounds.yMax = Math.max(state.chartBounds.yMax, yMax);
   }
 
-  function renderChart() {
+  function getTimeSortedLogs(){
+    return [...state.logs].slice().sort((a,b)=>(a.ts||0)-(b.ts||0));
+  }
+
+  function renderChart(){
     resizeCanvasToDisplaySize(ui.chart, ctx);
     const w = ui.chart.width, h = ui.chart.height;
-    ctx.clearRect(0, 0, w, h);
+    ctx.clearRect(0,0,w,h);
 
-    updateChartFilterUI();
-    const filtered = applyChartFilter(state.logs);
-
-    if (filtered.length < 2) {
+    const data = getTimeSortedLogs();
+    if (data.length < 2){
       ctx.fillStyle = "#777";
-      const fontPx = Math.max(14, Math.round(h * 0.06));
+      const fontPx = Math.max(14, Math.round(h*0.06));
       ctx.font = `${fontPx}px -apple-system, system-ui, sans-serif`;
-      ctx.fillText("ログが2件以上あると表示（フィルタ条件も確認）", 20, 60);
+      ctx.fillText("ログが2件以上あるとグラフが表示されます", 20, 60);
       return;
     }
 
-    const data = [...filtered].sort((a,b) => (a.ts||0) - (b.ts||0));
-    const chipsArr = data.map(x => x.chips);
+    const chipsArr = data.map(d => Number(d.chips)||0);
+    const obsMin = Math.min(...chipsArr);
+    const obsMax = Math.max(...chipsArr);
 
-    // plot area
-    const pad = Math.round(Math.min(w,h) * 0.10);
-    const topPad = Math.round(pad * 0.9);
+    // Update sticky bounds
+    updateChartBoundsForObserved(obsMin, obsMax);
+
+    const yMin = state.chartBounds.yMin;
+    const yMax = state.chartBounds.yMax;
+
+    const minTs = Math.min(...data.map(d=>d.ts||0));
+    const maxTs = Math.max(...data.map(d=>d.ts||0));
+    const spanTs = Math.max(1, maxTs - minTs);
+
+    const pad = Math.round(Math.min(w,h) * 0.09);
+    const topPad = Math.round(pad * 0.8);
     const innerW = w - pad*2;
     const innerH = h - (topPad + pad);
 
-    const minTs = Math.min(...data.map(d => d.ts || 0));
-    const maxTs = Math.max(...data.map(d => d.ts || 0));
-    const spanTs = Math.max(1, maxTs - minTs);
     const xAt = (ts) => pad + innerW * ((ts - minTs) / spanTs);
+    const yAt = (v)  => topPad + innerH * (1 - (v - yMin) / Math.max(1, (yMax - yMin)));
 
-    // range logic
-    const { yMin, yMax } = computeChartRange(chipsArr, state.initial);
-    const spanY = Math.max(1, yMax - yMin);
-    const yAt = (v) => topPad + innerH * (1 - (v - yMin) / spanY);
-
-    // ticks
-    const tickFont = Math.max(12, Math.round(h * 0.04));
-    ctx.font = `${tickFont}px -apple-system, system-ui, sans-serif`;
-    ctx.fillStyle = "#666";
-
-    // Y axis ticks
-    const stepY = niceTickStep(spanY);
-    const yStart = Math.ceil(yMin / stepY) * stepY;
-    const yTicks = [];
-    for (let v = yStart; v <= yMax + 0.0001; v += stepY) yTicks.push(v);
-
-    // grid + y labels
+    // grid + axes
     ctx.strokeStyle = "#e8e8e8";
     ctx.lineWidth = 1;
-    for (const v of yTicks) {
-      const y = yAt(v);
+
+    const yTicks = 4;
+    for (let i=0;i<=yTicks;i++){
+      const y = topPad + innerH*(i/yTicks);
       ctx.beginPath();
       ctx.moveTo(pad, y);
-      ctx.lineTo(w - pad, y);
+      ctx.lineTo(w-pad, y);
       ctx.stroke();
-      ctx.fillText(fmtInt(v), 8, y + Math.round(tickFont*0.35));
     }
 
-    // X axis ticks (time)
-    const tickCount = 5;
-    const xTicks = [];
-    for (let i=0;i<tickCount;i++){
-      const t = minTs + spanTs * (i/(tickCount-1));
-      xTicks.push(t);
+    const titleFont = Math.max(14, Math.round(h*0.055));
+    const smallFont = Math.max(12, Math.round(h*0.042));
+    ctx.fillStyle = "#555";
+    ctx.font = `${titleFont}px -apple-system, system-ui, sans-serif`;
+    ctx.fillText(`Chips  min ${fmtInt(yMin)} / max ${fmtInt(yMax)}`, pad, Math.round(titleFont*1.2));
+
+    // Y-axis tick labels
+    ctx.fillStyle = "#666";
+    ctx.font = `${smallFont}px -apple-system, system-ui, sans-serif`;
+    for (let i=0;i<=yTicks;i++){
+      const v = yMax - (yMax-yMin)*(i/yTicks);
+      const y = topPad + innerH*(i/yTicks);
+      ctx.fillText(fmtInt(v), pad, y - 4);
     }
 
-    // x labels + small vertical grid
-    ctx.strokeStyle = "#f0f0f0";
-    for (const t of xTicks) {
-      const x = xAt(t);
+    // X-axis ticks (time)
+    const xTicks = 5;
+    for (let i=0;i<=xTicks;i++){
+      const targetTs = minTs + spanTs*(i/xTicks);
+      // nearest log
+      let nearest = data[0], best = Math.abs((nearest.ts||0)-targetTs);
+      for (const r of data){
+        const d = Math.abs((r.ts||0)-targetTs);
+        if (d < best){ best = d; nearest = r; }
+      }
+      const x = xAt(nearest.ts||0);
+
+      // tick line
+      ctx.strokeStyle = "#ededed";
       ctx.beginPath();
       ctx.moveTo(x, topPad);
       ctx.lineTo(x, topPad + innerH);
       ctx.stroke();
-    }
 
-    ctx.fillStyle = "#666";
-    ctx.font = `${tickFont}px -apple-system, system-ui, sans-serif`;
-    for (const t of xTicks) {
-      // pick nearest actual log time (avoid weird labels)
-      let nearest = data[0];
-      let best = Math.abs((nearest.ts||0) - t);
-      for (const r of data) {
-        const d = Math.abs((r.ts||0) - t);
-        if (d < best) { best = d; nearest = r; }
-      }
-      const x = xAt(nearest.ts);
-      const label = `${nearest.time?.slice(0,5) || ""}`;
+      // label
+      ctx.fillStyle = "#666";
+      const label = `${nearest.date} ${String(nearest.time||"").slice(0,5)}`;
       ctx.save();
-      ctx.translate(x, h - Math.round(tickFont*0.6));
-      ctx.rotate(-Math.PI/8);
-      ctx.fillText(label, -Math.round(tickFont*1.6), 0);
+      ctx.translate(x, h - Math.round(smallFont*0.5));
+      ctx.rotate(-Math.PI/6);
+      ctx.fillText(label, -Math.round(smallFont*5.5), 0);
       ctx.restore();
     }
 
-    // title (range)
-    const titleFont = Math.max(14, Math.round(h * 0.05));
-    ctx.fillStyle = "#555";
-    ctx.font = `${titleFont}px -apple-system, system-ui, sans-serif`;
-    const f = state.chartFilter;
-    const label = `Chips（レンジ ${fmtInt(yMin)}〜${fmtInt(yMax)}） / 表示：${f.name==="__ALL__"?"All Name":f.name} / ${f.date==="__ALL__"?"All Date":f.date}`;
-    ctx.fillText(label, pad, Math.round(titleFont*1.3));
-
     // line
     ctx.strokeStyle = "#111";
-    ctx.lineWidth = Math.max(2, Math.round(h*0.01));
+    ctx.lineWidth = Math.max(2, Math.round(h*0.012));
     ctx.beginPath();
     ctx.moveTo(xAt(data[0].ts), yAt(chipsArr[0]));
     for (let i=1;i<data.length;i++){
@@ -868,19 +838,19 @@ K  AI AI ... 9
     }
     ctx.stroke();
 
-    // last point
-    const last = data.length - 1;
+    // last dot
+    const lastIdx = data.length-1;
     ctx.fillStyle = "#111";
     const r = Math.max(4, Math.round(h*0.02));
     ctx.beginPath();
-    ctx.arc(xAt(data[last].ts), yAt(chipsArr[last]), r, 0, Math.PI*2);
+    ctx.arc(xAt(data[lastIdx].ts), yAt(chipsArr[lastIdx]), r, 0, Math.PI*2);
     ctx.fill();
   }
 
-  // ===== Logs
-  function renderLogs() {
+  // --- Logs
+  function renderLogs(){
     ui.logBody.innerHTML = "";
-    for (const r of state.logs) {
+    for (const r of state.logs){
       const tr = document.createElement("tr");
       const td = (text, cls="") => {
         const t = document.createElement("td");
@@ -888,369 +858,332 @@ K  AI AI ... 9
         if (cls) t.className = cls;
         return t;
       };
-      tr.appendChild(td(r.name || "", ""));
+
+      tr.appendChild(td(r.name || ""));
       tr.appendChild(td(r.date || "", "mono"));
       tr.appendChild(td(r.time || "", "mono"));
       tr.appendChild(td(fmtInt(r.chips), "mono right"));
       tr.appendChild(td(fmtInt(r.initial), "mono right"));
       tr.appendChild(td(fmtInt(r.busted), "mono right"));
-      tr.appendChild(td(fmtInt(r.dif), "mono right"));
+      tr.appendChild(td(fmtInt(r.difChips), "mono right"));
       tr.appendChild(td(fmtInt(r.sb), "mono right"));
       tr.appendChild(td(fmtInt(r.bb), "mono right"));
       tr.appendChild(td(fmtInt(r.bbante), "mono right"));
-      tr.appendChild(td(Number.isFinite(r.m) ? fmt1(r.m) : "-", "mono right"));
-      tr.appendChild(td(r.memo || "", ""));
+      tr.appendChild(td(Number.isFinite(r.mValue) ? fmt1(r.mValue) : "-", "mono right"));
+      tr.appendChild(td(r.memo || ""));
       ui.logBody.appendChild(tr);
     }
   }
 
-  function logsToCsv() {
-    const headers = ["Name","Date","Time","Chips","Initial","Busted","Dif","SB","BB","Ante","M","Memo"];
-    const esc = (v) => {
-      const s = String(v ?? "");
-      if (s.includes(",") || s.includes('"') || s.includes("\n")) return `"${s.replace(/"/g, '""')}"`;
+  // --- Power table
+  const RANKS = ["A","K","Q","J","T","9","8","7","6","5","4","3","2"];
+
+  function parseCsvMatrix(text){
+    // expects 13 lines, 13 comma-separated values (AI or number)
+    const lines = text.split(/\r?\n/).map(s=>s.trim()).filter(s=>s.length>0);
+    if (lines.length < 13) throw new Error("行数が足りません（13行必要）");
+    const grid = [];
+    for (let i=0;i<13;i++){
+      const parts = lines[i].split(",").map(s=>s.trim());
+      if (parts.length < 13) throw new Error(`列数が足りません（${i+1}行目）`);
+      const row = parts.slice(0,13).map(v=>{
+        if (!v) return "";
+        const u = v.toUpperCase();
+        if (u === "AI") return "AI";
+        const n = Number(v);
+        if (Number.isFinite(n)) return n;
+        return v; // keep as string
+      });
+      grid.push(row);
+    }
+    return { ranks: RANKS, grid };
+  }
+
+  function renderPowerGrid(){
+    ui.powerGrid.innerHTML = "";
+
+    // If no table, render placeholder
+    const table = state.powerTable;
+    const ranks = RANKS;
+
+    // header
+    const thead = document.createElement("thead");
+    const hr = document.createElement("tr");
+    const corner = document.createElement("th");
+    corner.textContent = "";
+    hr.appendChild(corner);
+    for (const r of ranks){
+      const th = document.createElement("th");
+      th.textContent = r;
+      hr.appendChild(th);
+    }
+    thead.appendChild(hr);
+    ui.powerGrid.appendChild(thead);
+
+    const tbody = document.createElement("tbody");
+
+    const power = Number(ui.powerNum.textContent.replace(/,/g,""));
+    const threshold = Number.isFinite(power) ? power : NaN;
+
+    for (let i=0;i<13;i++){
+      const tr = document.createElement("tr");
+      const th = document.createElement("th");
+      th.textContent = ranks[i];
+      tr.appendChild(th);
+
+      for (let j=0;j<13;j++){
+        const td = document.createElement("td");
+        let val = "";
+        if (table && table.grid && table.grid[i] && typeof table.grid[i][j] !== "undefined"){
+          val = table.grid[i][j];
+        }
+
+        if (val === "AI"){
+          td.textContent = "AI";
+          td.classList.add("hi");
+        } else if (typeof val === "number"){
+          td.textContent = String(val);
+          if (Number.isFinite(threshold) && val >= threshold) td.classList.add("hi");
+        } else {
+          td.textContent = (val === "" ? "—" : String(val));
+          td.classList.add("muted");
+        }
+
+        tr.appendChild(td);
+      }
+      tbody.appendChild(tr);
+    }
+    ui.powerGrid.appendChild(tbody);
+  }
+
+  // --- Export
+  function logsToCsv(){
+    const headers = ["Name","Date","Time","Chips","Initial","Busted","DifChips","SB","BB","BBante","M","Memo"];
+    const rows = state.logs.map(r => [
+      r.name??"", r.date??"", r.time??"",
+      r.chips??"", r.initial??"", r.busted??"", r.difChips??"",
+      r.sb??"", r.bb??"", r.bbante??"",
+      Number.isFinite(r.mValue)?(Math.round(r.mValue*10)/10):"",
+      (r.memo??"").replace(/\r?\n/g," ")
+    ]);
+    const esc = (v)=>{
+      const s = String(v);
+      if (s.includes(",") || s.includes('"') || s.includes("\n")) return `"${s.replace(/"/g,'""')}"`;
       return s;
     };
-    const rows = state.logs.map(r => [
-      r.name, r.date, r.time, r.chips, r.initial, r.busted, r.dif, r.sb, r.bb, r.bbante,
-      Number.isFinite(r.m) ? (Math.round(r.m*10)/10) : "",
-      (r.memo ?? "").replace(/\r?\n/g, " ")
-    ]);
     return [headers.map(esc).join(","), ...rows.map(r => r.map(esc).join(","))].join("\n");
   }
 
-  async function copyCsv() {
-    try { await navigator.clipboard.writeText(logsToCsv()); showToast("CSVをコピーしました"); }
-    catch { alert("コピーに失敗しました（権限/ブラウザ設定をご確認ください）。"); }
+  async function copyCsv(){
+    try{
+      await navigator.clipboard.writeText(logsToCsv());
+      showToast("CSVをコピーしました ✓");
+    }catch{
+      alert("コピーに失敗しました（ブラウザの権限設定をご確認ください）。");
+    }
   }
 
-  function downloadText(filename, text, type="text/plain") {
-    const blob = new Blob([text], { type });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+  async function exportExcel(){
+    if (!window.ExcelJS){
+      alert("Excel生成ライブラリの読み込みに失敗しました。ネット接続をご確認ください。");
+      return;
+    }
+    const wb = new ExcelJS.Workbook();
+    wb.creator = "Poker Stack Logger";
+    wb.created = new Date();
+
+    const ws = wb.addWorksheet("Logs");
+    ws.columns = [
+      { header:"Name", key:"name", width:20 },
+      { header:"Date", key:"date", width:12 },
+      { header:"Time", key:"time", width:10 },
+      { header:"Chips", key:"chips", width:12 },
+      { header:"Initial", key:"initial", width:12 },
+      { header:"Busted", key:"busted", width:10 },
+      { header:"DifChips", key:"difChips", width:12 },
+      { header:"SB", key:"sb", width:10 },
+      { header:"BB", key:"bb", width:10 },
+      { header:"BB ante", key:"bbante", width:10 },
+      { header:"M", key:"mValue", width:10 },
+      { header:"Memo", key:"memo", width:40 },
+    ];
+    ws.getRow(1).font = { bold:true };
+
+    const rows = [...state.logs].reverse().map(r => ({
+      name:r.name??"", date:r.date??"", time:r.time??"",
+      chips:r.chips??0, initial:r.initial??0, busted:r.busted??0, difChips:r.difChips??0,
+      sb:r.sb??0, bb:r.bb??0, bbante:r.bbante??0,
+      mValue:Number.isFinite(r.mValue)?(Math.round(r.mValue*10)/10):"",
+      memo:r.memo??"",
+    }));
+    ws.addRows(rows);
+    ws.views = [{ state:"frozen", ySplit:1 }];
+
+    const ws2 = wb.addWorksheet("Chart");
+    ws2.getCell("A1").value = "Chips Chart (image)";
+    ws2.getCell("A1").font = { bold:true };
+    try{
+      renderChart();
+      const dataUrl = ui.chart.toDataURL("image/png");
+      const base64 = dataUrl.split(",")[1];
+      const imageId = wb.addImage({ base64, extension:"png" });
+      ws2.addImage(imageId, { tl:{ col:0, row:2 }, ext:{ width:1000, height:420 } });
+    }catch{
+      ws2.getCell("A3").value = "※ グラフ画像の埋め込みに失敗しました。";
+    }
+
+    const filenameBase = (state.name && state.name.trim()) ? state.name.trim() : "PokerStack";
+    const safe = filenameBase.replace(/[\\/:*?"<>|]/g,"_");
+    const fileName = `${safe}_${new Date().toISOString().slice(0,19).replace(/[:T]/g,"-")}.xlsx`;
+
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], { type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    saveAs(blob, fileName);
   }
 
-  function exportJson() {
-    const nameBase = (state.name && state.name.trim()) ? state.name.trim() : "PokerStack";
-    const safe = nameBase.replace(/[\\/:*?"<>|]/g, "_");
-    downloadText(`${safe}_backup.json`, JSON.stringify(state, null, 2), "application/json");
-    showToast("バックアップJSONを保存しました");
+  // --- Tabs & swipe
+  function setTab(idx){
+    currentTab = clamp(idx, 0, pageEls.length-1);
+    tabBtns.forEach(b => b.classList.toggle("active", Number(b.dataset.tab) === currentTab));
+
+    // translate pages container by moving each page
+    pageEls.forEach((p) => {
+      p.style.transform = `translateX(${-100 * currentTab}%)`;
+    });
+
+    // keep tabbar visible
+    const activeBtn = tabBtns.find(b => Number(b.dataset.tab)===currentTab);
+    if (activeBtn) activeBtn.scrollIntoView({ behavior:"smooth", inline:"center", block:"nearest" });
   }
 
-  function importJson() {
-    const inp = document.createElement("input");
-    inp.type = "file";
-    inp.accept = "application/json";
-    inp.onchange = async () => {
-      const file = inp.files?.[0];
-      if (!file) return;
-      const text = await file.text();
-      try {
-        const obj = JSON.parse(text);
-        if (!obj || typeof obj !== "object") throw new Error("invalid");
-        // minimal merge
-        state = { ...structuredClone(defaultState), ...obj };
-        if (!Array.isArray(state.logs)) state.logs = [];
-        if (!state.chartFilter) state.chartFilter = { name:"__ALL__", date:"__ALL__" };
-        if (!state.powerGrid || typeof state.powerGrid !== "object") state.powerGrid = {};
-        save();
-        bindToUI();
-        recalcAndRender(true);
-        showToast("復元しました");
-      } catch {
-        alert("JSONの読み込みに失敗しました。");
-      }
-    };
-    inp.click();
+  let touchStartX = null, touchStartY = null;
+  let touchActive = false;
+
+  function onTouchStart(e){
+    if (!e.touches || e.touches.length !== 1) return;
+    touchActive = true;
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }
+  function onTouchMove(e){
+    if (!touchActive || touchStartX === null) return;
+    // do nothing; we decide on end
+  }
+  function onTouchEnd(e){
+    if (!touchActive || touchStartX === null) return;
+    touchActive = false;
+
+    const t = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0] : null;
+    if (!t) return;
+
+    const dx = t.clientX - touchStartX;
+    const dy = t.clientY - touchStartY;
+
+    // horizontal swipe only
+    if (Math.abs(dx) < 40) return;
+    if (Math.abs(dy) > 40) return;
+
+    if (dx < 0) setTab(currentTab + 1);
+    else setTab(currentTab - 1);
   }
 
-  // ===== Record
-  function recordLog() {
+  // --- Core re-render
+  function recalcAndRender(){
+    state.name = inputs.name.value ?? "";
+    state.chips = Math.max(0, numVal(inputs.chips, state.chips));
+    state.initial = Math.max(0, numVal(inputs.initial, state.initial));
+    state.busted = Math.max(0, Math.floor(numVal(inputs.busted, state.busted)));
+    state.sb = Math.max(0, numVal(inputs.sb, state.sb));
+    state.bb = Math.max(1, numVal(inputs.bb, state.bb));
+    state.bbante = Math.max(0, numVal(inputs.bbante, state.bbante));
+    state.memo = inputs.memo.value ?? "";
+    state.position = inputs.position.value;
+
+    // locks
+    enforceLocks();
+    applyLocksUI();
+
+    // metrics
+    const dif = calcDif(state.chips, state.initial, state.busted);
+    const m = calcM(state.chips, state.sb, state.bb, state.bbante);
+    ui.chipsBig.textContent = fmtInt(state.chips);
+    ui.difChips.textContent = Number.isFinite(dif) ? fmtInt(dif) : "-";
+    ui.mValue.textContent = Number.isFinite(m) ? fmt1(m) : "-";
+    ui.mValue2.textContent = Number.isFinite(m) ? fmt1(m) : "-";
+
+    // inc buttons
+    renderIncButtons();
+
+    // power
+    const behind = calcBehind8max(state.position);
+    const power = calcPower(m, behind);
+    ui.behind.textContent = Number.isFinite(behind) ? fmtInt(behind) : "-";
+    ui.powerNum.textContent = Number.isFinite(power) ? fmt1(power) : "-";
+
+    renderLogs();
+    renderChart();
+    renderPowerGrid();
+
+    save();
+  }
+
+  function recordLog(){
     const d = now();
     const date = fmtDate(d);
     const time = fmtTime(d);
 
-    const chips = state.chips;
-    const initial = state.initial;
-    const busted = state.busted;
-    const sb = state.sb;
-    const bb = state.bb;
-    const bbante = state.bbante;
-    const memo = (state.memo || "").trim();
-
-    const dif = calcDif(chips, initial, busted);
-    const m = calcM(chips, sb, bb, bbante);
+    const dif = calcDif(state.chips, state.initial, state.busted);
+    const m = calcM(state.chips, state.sb, state.bb, state.bbante);
 
     state.logs.unshift({
       name: state.name,
       date,
       time,
-      chips,
-      initial,
-      busted,
-      dif,
-      sb,
-      bb,
-      bbante,
-      m,
-      ts: d.getTime(),
-      memo
+      chips: state.chips,
+      initial: state.initial,
+      busted: state.busted,
+      difChips: dif,
+      sb: state.sb,
+      bb: state.bb,
+      bbante: state.bbante,
+      mValue: m,
+      memo: (state.memo || "").trim(),
+      ts: d.getTime()
     });
     if (state.logs.length > 1200) state.logs.length = 1200;
 
-    // refresh step candidates only on record (your preference)
-    refreshStepTripletFromChips();
+    // chart baseline bound should at least reflect current initial
+    initChartBoundsIfNeeded();
 
-    save();
-    recalcAndRender(true);
-    showToast(`記録しました ✓  ${time}`);
+    showToast("記録しました ✓");
+    recalcAndRender();
   }
 
-  // ===== Power grid
-  function cellKey(r1, r2) { return `${r1}-${r2}`; }
-
-  function getCellValue(rRow, rCol) {
-    // grid uses ranks: header col = RANKS; row header = RANKS
-    const key = cellKey(rRow, rCol);
-    return state.powerGrid[key];
-  }
-
-  function parseCellValue(v) {
-    const s = String(v ?? "").trim();
-    if (!s) return null;
-    if (s.toUpperCase() === "AI") return "AI";
-    const n = Number(s);
-    if (Number.isFinite(n)) return n;
-    return null;
-  }
-
-  function buildHandGrid() {
-    ui.handGrid.innerHTML = "";
-
-    // header row
-    const thead = document.createElement("tr");
-    const th0 = document.createElement("th");
-    th0.className = "left";
-    th0.textContent = "";
-    thead.appendChild(th0);
-    for (const c of RANKS) {
-      const th = document.createElement("th");
-      th.textContent = c;
-      thead.appendChild(th);
+  function applyPowerData(){
+    const text = (inputs.powerData.value || "").trim();
+    if (!text){
+      alert("貼り付けデータが空です。");
+      return;
     }
-    ui.handGrid.appendChild(thead);
-
-    // rows
-    for (const r of RANKS) {
-      const tr = document.createElement("tr");
-
-      const th = document.createElement("td");
-      th.className = "left";
-      th.textContent = r;
-      tr.appendChild(th);
-
-      for (const c of RANKS) {
-        const td = document.createElement("td");
-        const val = getCellValue(r,c);
-        td.dataset.key = cellKey(r,c);
-        td.textContent = (val === undefined || val === null) ? "" : String(val);
-
-        tr.appendChild(td);
-      }
-      ui.handGrid.appendChild(tr);
+    try{
+      state.powerTable = parseCsvMatrix(text);
+      showToast("表に反映しました ✓");
+      recalcAndRender();
+    }catch(err){
+      alert(`読み込みに失敗しました：${err.message}`);
     }
   }
 
-  function highlightPowerGrid() {
-    // Highlight if cell score >= Power
-    const power = computePower();
-    const tds = ui.handGrid.querySelectorAll("td[data-key]");
-    tds.forEach(td => {
-      td.classList.remove("cellHi", "cellAI", "cellLow");
-      const raw = td.textContent.trim();
-      if (!raw) return;
-
-      if (raw.toUpperCase() === "AI") {
-        td.classList.add("cellAI");
-        // always highlight as can all-in
-        td.classList.add("cellHi");
-        return;
-      }
-      const n = Number(raw);
-      if (!Number.isFinite(n)) return;
-
-      if (Number.isFinite(power) && n >= power) td.classList.add("cellHi");
-      if (n < 3) td.classList.add("cellLow");
-    });
+  function clearPowerData(){
+    if (!confirm("パワーナンバー表データを消去します。よろしいですか？")) return;
+    inputs.powerData.value = "";
+    state.powerTable = null;
+    showToast("データを消去しました");
+    recalcAndRender();
   }
 
-  function applyPasteGrid(text) {
-    // Expect matrix with headers; supports TSV or CSV
-    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
-    if (lines.length < 3) throw new Error("not enough lines");
-
-    // detect delimiter by first line
-    const delim = (lines[0].includes("\t")) ? "\t" : ",";
-    const rows = lines.map(l => l.split(delim).map(x => x.trim()));
-
-    // first row: header ranks
-    const hdr = rows[0].slice(1); // skip left-top
-    // map header to columns in our ranks
-    const colMap = {};
-    for (let i=0;i<hdr.length;i++){
-      const r = hdr[i].toUpperCase();
-      colMap[r] = i+1; // index in row array
-    }
-
-    const newGrid = { ...state.powerGrid };
-
-    for (let ri=1; ri<rows.length; ri++){
-      const row = rows[ri];
-      const rowRank = (row[0] || "").toUpperCase();
-      if (!rowRank) continue;
-      if (!RANKS.includes(rowRank)) continue;
-
-      for (const colRank of RANKS) {
-        const idx = colMap[colRank];
-        if (!idx || idx >= row.length) continue;
-        const parsed = parseCellValue(row[idx]);
-        if (parsed === null) continue;
-        newGrid[cellKey(rowRank, colRank)] = parsed;
-      }
-    }
-
-    state.powerGrid = newGrid;
-  }
-
-  // ===== Page / Swipe navigation
-  function setActivePage(pageId) {
-    // tabs
-    tabEls.forEach(t => t.classList.toggle("active", t.dataset.page === pageId));
-    // pages
-    Array.from(pagesEl.querySelectorAll(".page")).forEach(p => {
-      p.classList.toggle("active", p.id === `page-${pageId}`);
-    });
-    // keep state? (not necessary)
-    // re-render chart on show
-    if (pageId === "chart") renderChart();
-    if (pageId === "power") {
-      buildHandGrid();
-      highlightPowerGrid();
-    }
-  }
-
-  tabEls.forEach(t => {
-    t.addEventListener("click", () => setActivePage(t.dataset.page));
-  });
-
-  // Swipe detection (avoid edge gesture)
-  let touchStartX = null;
-  let touchStartY = null;
-  let touchTargetIsInput = false;
-  function isFormEl(elm) {
-    if (!elm) return false;
-    const tag = (elm.tagName || "").toLowerCase();
-    return tag === "input" || tag === "textarea" || tag === "select" || tag === "button";
-  }
-
-  document.addEventListener("touchstart", (e) => {
-    if (e.touches.length !== 1) return;
-    const t = e.touches[0];
-    const w = window.innerWidth || 0;
-    // avoid extreme edges (iOS back gesture)
-    if (t.clientX < 18 || t.clientX > w - 18) return;
-
-    touchStartX = t.clientX;
-    touchStartY = t.clientY;
-    touchTargetIsInput = isFormEl(e.target);
-  }, { passive: true });
-
-  document.addEventListener("touchend", (e) => {
-    if (touchStartX === null || touchStartY === null) return;
-    if (touchTargetIsInput) { touchStartX = touchStartY = null; return; } // avoid conflict while editing
-
-    const t = e.changedTouches[0];
-    const dx = t.clientX - touchStartX;
-    const dy = t.clientY - touchStartY;
-
-    touchStartX = touchStartY = null;
-
-    if (Math.abs(dx) < 55) return;
-    if (Math.abs(dx) < Math.abs(dy) * 1.8) return; // mostly horizontal
-
-    const order = ["input","chart","logs","power"];
-    const current = tabEls.findIndex(x => x.classList.contains("active"));
-    let next = current;
-
-    if (dx < 0) next = Math.min(order.length - 1, current + 1); // swipe left => next
-    else next = Math.max(0, current - 1); // swipe right => prev
-
-    setActivePage(order[next]);
-  }, { passive: true });
-
-  // ===== Core recompute/render
-  function computePower() {
-    const m = calcM(state.chips, state.sb, state.bb, state.bbante);
-    const behind = calcBehind(state.position);
-    const power = (Number.isFinite(m) && Number.isFinite(behind)) ? (m * behind) : NaN;
-    return power;
-  }
-
-  function recalcAndRender(reRenderStepTriplet) {
-    // Apply auto locks first (so values are coherent)
-    applyAutoLocks();
-
-    state.name = inputs.name.value ?? "";
-    state.chips = Math.max(0, numVal(inputs.chips, state.chips));
-    state.initial = Math.max(0, numVal(inputs.initial, state.initial));
-    state.busted = Math.max(0, Math.floor(numVal(inputs.busted, state.busted)));
-
-    state.sb = Math.max(0, numVal(inputs.sb, state.sb));
-    state.bb = Math.max(0, numVal(inputs.bb, state.bb));
-    state.bbante = Math.max(0, numVal(inputs.bbante, state.bbante));
-    state.memo = inputs.memo.value ?? "";
-
-    state.bbIs2sb = inputs.bbIs2sb.checked;
-    state.anteIsBb = inputs.anteIsBb.checked;
-
-    state.position = inputs.position.value;
-
-    const dif = calcDif(state.chips, state.initial, state.busted);
-    const m = calcM(state.chips, state.sb, state.bb, state.bbante);
-    const behind = calcBehind(state.position);
-    const power = computePower();
-
-    ui.chipsBig.textContent = fmtInt(state.chips);
-    ui.difChips.textContent = Number.isFinite(dif) ? fmtInt(dif) : "-";
-    ui.mValue.textContent = Number.isFinite(m) ? fmt1(m) : "-";
-    ui.behind.textContent = Number.isFinite(behind) ? fmtInt(behind) : "-";
-    ui.powerNum.textContent = Number.isFinite(power) ? fmt1(power) : "-";
-
-    inputs.behindRead.value = Number.isFinite(behind) ? String(behind) : "";
-    inputs.mRead.value = Number.isFinite(m) ? fmt1(m) : "";
-    inputs.powerRead.value = Number.isFinite(power) ? fmt1(power) : "";
-
-    renderLogs();
-    // chart & power grid render on page show, but keep updated too:
-    renderChart();
-    buildHandGrid();
-    highlightPowerGrid();
-
-    if (reRenderStepTriplet) {
-      refreshStepTripletFromChips();
-    }
-
-    save();
-  }
-
-  // ===== Bind state to UI
-  function bindToUI() {
+  function bind(){
+    // restore inputs
     inputs.name.value = state.name;
     inputs.chips.value = state.chips;
     inputs.initial.value = state.initial;
@@ -1259,164 +1192,81 @@ K  AI AI ... 9
     inputs.bb.value = state.bb;
     inputs.bbante.value = state.bbante;
     inputs.memo.value = state.memo;
-
-    inputs.bbIs2sb.checked = !!state.bbIs2sb;
-    inputs.anteIsBb.checked = !!state.anteIsBb;
-
     inputs.position.value = state.position;
 
-    // chart filter restore
-    // (will be corrected if options missing)
-    inputs.chartName.value = state.chartFilter.name;
-    inputs.chartDate.value = state.chartFilter.date;
+    // locks
+    inputs.lockBB2SB.checked = !!state.locks.bb2sb;
+    inputs.lockAnteBB.checked = !!state.locks.anteEqBB;
 
-    applyAutoLocks();
+    // Tabs
+    tabBtns.forEach(b=>{
+      b.addEventListener("click", ()=> setTab(Number(b.dataset.tab)));
+    });
+    pages.addEventListener("touchstart", onTouchStart, { passive:true });
+    pages.addEventListener("touchmove", onTouchMove, { passive:true });
+    pages.addEventListener("touchend", onTouchEnd, { passive:true });
 
-    // steps
-    stepTriplet = computeStepTriplet(state.chips);
-    renderStepButtons();
+    // inputs
+    for (const id of ["name","chips","initial","busted","sb","bb","bbante","memo","position"]){
+      inputs[id].addEventListener("input", recalcAndRender);
+      inputs[id].addEventListener("change", recalcAndRender);
+    }
 
-    // build grids
-    buildHandGrid();
-    highlightPowerGrid();
-  }
-
-  // ===== Events
-  function wireEvents() {
-    // When chips typed: refresh triplet (allowed)
-    inputs.chips.addEventListener("input", () => {
-      state.chips = Math.max(0, numVal(inputs.chips, state.chips));
-      refreshStepTripletFromChips();
-      recalcAndRender(false);
+    // locks change
+    inputs.lockBB2SB.addEventListener("change", ()=>{
+      state.locks.bb2sb = inputs.lockBB2SB.checked;
+      recalcAndRender();
+    });
+    inputs.lockAnteBB.addEventListener("change", ()=>{
+      state.locks.anteEqBB = inputs.lockAnteBB.checked;
+      recalcAndRender();
     });
 
-    // Auto checkboxes
-    inputs.bbIs2sb.addEventListener("change", () => {
-      applyAutoLocks();
-      recalcAndRender(false);
-    });
-    inputs.anteIsBb.addEventListener("change", () => {
-      applyAutoLocks();
-      recalcAndRender(false);
-    });
-
-    // SB/BB changes should cascade if auto toggled
-    inputs.sb.addEventListener("input", () => { applyAutoLocks(); recalcAndRender(false); });
-    inputs.bb.addEventListener("input", () => { applyAutoLocks(); recalcAndRender(false); });
-    inputs.bbante.addEventListener("input", () => { applyAutoLocks(); recalcAndRender(false); });
-
-    // Other fields
-    ["name","initial","busted","memo"].forEach(k => {
-      inputs[k].addEventListener("input", () => recalcAndRender(false));
-      inputs[k].addEventListener("change", () => recalcAndRender(false));
-    });
-
-    // Busted +/- buttons
-    ui.bustedMinus.addEventListener("click", () => {
-      state.busted = Math.max(0, (state.busted|0) - 1);
+    // busted +/- buttons
+    btn.bustedMinus.addEventListener("click", ()=>{
+      state.busted = Math.max(0, Math.floor(state.busted - 1));
       inputs.busted.value = state.busted;
-      recalcAndRender(false);
+      recalcAndRender();
     });
-    ui.bustedPlus.addEventListener("click", () => {
-      state.busted = Math.max(0, (state.busted|0) + 1);
+    btn.bustedPlus.addEventListener("click", ()=>{
+      state.busted = Math.max(0, Math.floor(state.busted + 1));
       inputs.busted.value = state.busted;
-      recalcAndRender(false);
+      recalcAndRender();
     });
 
-    // Record
-    ui.record.addEventListener("click", () => recordLog());
-
-    // Undo
-    ui.undo.addEventListener("click", () => {
+    // record
+    btn.record.addEventListener("click", recordLog);
+    btn.undo.addEventListener("click", ()=>{
       if (state.logs.length === 0) return;
       state.logs.shift();
-      save();
-      recalcAndRender(true);
       showToast("直近ログを削除しました");
+      recalcAndRender();
     });
-
-    // Clear all
-    ui.clearAll.addEventListener("click", () => {
+    btn.clearAll.addEventListener("click", ()=>{
       if (!confirm("すべてのログと設定を消去します。よろしいですか？")) return;
       localStorage.removeItem(LS_KEY);
-      state = structuredClone(defaultState);
-      bindToUI();
-      recalcAndRender(true);
-      showToast("全消去しました");
+      location.reload();
     });
 
-    // Chart filters
-    inputs.chartName.addEventListener("change", () => {
-      state.chartFilter.name = inputs.chartName.value;
-      // Date options depend on name
-      updateChartFilterUI();
-      renderChart();
-      save();
-    });
-    inputs.chartDate.addEventListener("change", () => {
-      state.chartFilter.date = inputs.chartDate.value;
-      renderChart();
-      save();
-    });
-    inputs.chartReset.addEventListener("click", () => {
-      state.chartFilter = { name:"__ALL__", date:"__ALL__" };
-      updateChartFilterUI();
-      renderChart();
-      save();
-      showToast("表示リセット");
-    });
-
-    // Resize => redraw chart crisp
-    window.addEventListener("resize", () => { renderChart(); }, { passive: true });
-
-    // CSV / JSON
+    // export
+    ui.exportXlsx.addEventListener("click", exportExcel);
     ui.copyCsv.addEventListener("click", copyCsv);
-    ui.exportJson.addEventListener("click", exportJson);
-    ui.importJson.addEventListener("click", importJson);
 
-    // Position for power
-    inputs.position.addEventListener("change", () => {
-      recalcAndRender(false);
-      showToast("Position更新");
-    });
+    // power data
+    btn.applyPowerData.addEventListener("click", applyPowerData);
+    btn.clearPowerData.addEventListener("click", clearPowerData);
 
-    // Power paste area toggle
-    ui.showPaste.addEventListener("click", () => {
-      const open = ui.pasteArea.style.display !== "none";
-      ui.pasteArea.style.display = open ? "none" : "block";
-      ui.showPaste.textContent = open ? "▶ ここを押して貼り付け欄を開く（TSV/CSV）" : "▼ 貼り付け欄を閉じる";
-    });
+    // resize
+    window.addEventListener("resize", () => {
+      renderChart();
+    }, { passive:true });
 
-    ui.applyGrid.addEventListener("click", () => {
-      try {
-        applyPasteGrid(ui.gridPaste.value || "");
-        save();
-        buildHandGrid();
-        highlightPowerGrid();
-        showToast("表データを反映しました");
-      } catch {
-        alert("貼り付け形式を確認してください（TSV/CSV、ヘッダあり）。");
-      }
-    });
-
-    ui.clearGrid.addEventListener("click", () => {
-      if (!confirm("表データを消去します。よろしいですか？")) return;
-      state.powerGrid = {};
-      save();
-      buildHandGrid();
-      highlightPowerGrid();
-      showToast("表データを消去しました");
-    });
+    initChartBoundsIfNeeded();
+    setTab(0);
   }
 
-  // ===== Init
-  bindToUI();
-  wireEvents();
-  recalcAndRender(true);
-
-  // Set default page
-  setActivePage("input");
-
+  bind();
+  recalcAndRender();
 })();
 </script>
 </body>
