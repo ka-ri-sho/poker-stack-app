@@ -1,183 +1,1458 @@
 <!doctype html>
 <html lang="ja">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Poker Stack Logger v'25/12/29</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Poker Stack Logger v'25/12/29</title>
 
-<style>
-body{
-  font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;
-  margin:12px;
-  background:#fff;
-  color:#111;
-}
-h1{font-size:16px;margin:0 0 10px}
-.card{
-  border:1px solid #ddd;
-  border-radius:14px;
-  padding:12px;
-  margin-bottom:12px;
-}
-label{font-size:12px;font-weight:700}
-input,select,button{
-  width:100%;
-  padding:10px;
-  font-size:16px;
-  border-radius:10px;
-  border:1px solid #ccc;
-}
-button{font-weight:900}
-.big{font-size:28px;font-weight:900}
-.hint{font-size:12px;color:#666;margin-top:4px}
-.err{color:#c00;font-weight:900;font-size:12px}
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
-table{
-  border-collapse:collapse;
-  min-width:640px;
-  width:100%;
-}
-th,td{
-  border:1px solid #ddd;
-  padding:6px;
-  text-align:center;
-  font-weight:700;
-}
-th.sticky{
-  position:sticky;
-  left:0;
-  background:#fff;
-  z-index:2;
-}
-td.hl{background:rgba(0,255,160,.35)}
-td.dark{background:#f2f2f2}
+  <style>
+    :root{
+      --bg:#ffffff;
+      --card:#ffffff;
+      --bd:#e6e6e6;
+      --text:#111;
+      --muted:#666;
+      --soft:#f6f6f6;
+      --shadow: 0 6px 20px rgba(0,0,0,.06);
+      --toast:#111;
+      --toastText:#fff;
+      --accent:#111;
+      --ok:#0a7;
+      --warn:#b50;
+      --danger:#c22;
+      --disabled:#efefef;
+    }
 
-.toast{
-  position:fixed;
-  bottom:20px;
-  left:50%;
-  transform:translateX(-50%);
-  background:#111;
-  color:#fff;
-  padding:10px 14px;
-  border-radius:999px;
-  font-size:13px;
-  font-weight:900;
-  opacity:0;
-  transition:.2s;
-}
-.toast.show{opacity:1}
-</style>
+    *{box-sizing:border-box}
+    body{
+      font-family: -apple-system, system-ui, Segoe UI, Roboto, sans-serif;
+      margin: 12px;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .appTitle{
+      display:flex;
+      align-items:baseline;
+      gap:10px;
+      margin: 4px 0 10px;
+    }
+    h1{
+      font-size: 16px;
+      margin:0;
+      font-weight: 800;
+      letter-spacing: .2px;
+    }
+    .ver{
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .tabs{
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: var(--bg);
+      padding-top: 6px;
+      padding-bottom: 8px;
+    }
+    .tabbar{
+      display:flex;
+      gap:8px;
+      overflow:auto;
+      padding: 6px 2px;
+      scroll-snap-type: x mandatory;
+    }
+    .tabbtn{
+      flex: 0 0 auto;
+      border:1px solid var(--bd);
+      background: var(--soft);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      scroll-snap-align: start;
+      white-space: nowrap;
+    }
+    .tabbtn.active{
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .pagesWrap{
+      overflow:hidden;
+      border-radius: 16px;
+    }
+    .pages{
+      display:flex;
+      width: 500%;
+      transform: translateX(0%);
+      transition: transform .22s ease;
+      will-change: transform;
+    }
+    .page{
+      width: 20%;
+      padding: 8px 0 18px;
+    }
+
+    .card{
+      border:1px solid var(--bd);
+      border-radius: 16px;
+      padding: 12px;
+      background: var(--card);
+      box-shadow: var(--shadow);
+      margin: 10px 0;
+    }
+
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; }
+    .row.nowrap{ flex-wrap:nowrap; }
+    .row.nowrap > * { flex: 1 1 auto; min-width: 0; }
+
+    label{ font-size:12px; color:#444; display:block; margin-bottom:4px; font-weight:700; }
+    input, select, button, textarea{
+      font-size: 16px;
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px solid #cfcfcf;
+      background:#fff;
+      color: var(--text);
+    }
+    input, select{ width:100%; }
+    input[type="number"]{ font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+    textarea{ width:100%; min-height: 72px; resize: vertical; }
+
+    .btn{
+      border:0;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-weight: 900;
+      cursor: pointer;
+      user-select:none;
+    }
+    .btnPrimary{ background: var(--accent); color:#fff; }
+    .btnGhost{ background: var(--soft); color: var(--text); border:1px solid var(--bd); }
+    .btnDanger{ background:#ffecec; color:#111; border:1px solid #ffd0d0; }
+    .btnSmall{ padding: 10px 10px; font-size: 14px; border-radius: 12px; }
+
+    .hint{
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .big{
+      font-size: 34px;
+      font-weight: 900;
+      letter-spacing: .4px;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum";
+    }
+    .metricLine{
+      display:flex;
+      flex-wrap:wrap;
+      gap: 12px;
+      margin-top: 6px;
+      align-items:center;
+    }
+    .metric{
+      font-size: 13px;
+      color:#333;
+      font-weight: 700;
+    }
+    .metric b{
+      font-size: 18px;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum";
+    }
+
+    .grid2{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    @media (min-width: 760px){
+      .grid2{ grid-template-columns: 1fr 1fr; }
+    }
+
+    /* Chips 6 buttons (2 columns) */
+    .deltaBox{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .deltaCol{ display:flex; flex-direction:column; gap: 8px; }
+    .deltaBtn{
+      width: 100%;
+      padding: 12px 10px;
+      border-radius: 14px;
+      border:1px solid var(--bd);
+      background: var(--soft);
+      font-weight: 900;
+      font-size: 16px;
+      text-align:center;
+    }
+    .deltaBtn.neg{ background:#fff; border-color:#ddd; }
+    .deltaBtn.pos{ background:#111; color:#fff; border-color:#111; }
+    .deltaBtn:active{ transform: scale(0.99); }
+
+    /* Disabled grey-out */
+    .disabled{
+      background: var(--disabled) !important;
+      color: #666 !important;
+      border-color: #d9d9d9 !important;
+    }
+
+    /* Error line under chips */
+    .errLine{
+      margin-top:6px;
+      font-size: 12px;
+      font-weight: 900;
+      color: var(--danger);
+      line-height: 1.35;
+      display:none;
+    }
+    .errLine.show{ display:block; }
+
+    /* Toast */
+    .toast{
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--toast);
+      color: var(--toastText);
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 900;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .18s ease, transform .18s ease;
+      z-index: 100;
+      box-shadow: 0 12px 30px rgba(0,0,0,.18);
+      max-width: calc(100vw - 24px);
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+    .toast.show{
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Chart */
+    canvas{ width:100%; height: 290px; display:block; border-radius: 16px; background:#fafafa; border:1px solid #eee; }
+
+    /* Logs */
+    table{ width:100%; border-collapse:collapse; }
+    th, td{ border-top:1px solid #eee; padding:10px 6px; font-size: 13px; vertical-align: top; }
+    th{ text-align:left; color:#555; font-weight:800; position: sticky; top: 0; background: #fff; }
+    .right{ text-align:right; }
+    .mono{ font-variant-numeric: tabular-nums; font-feature-settings:"tnum"; }
+    .pill{ display:inline-block; padding: 2px 10px; border-radius: 999px; background: var(--soft); border:1px solid var(--bd); font-size: 12px; font-weight: 800; }
+
+    /* Power table */
+    .powerWrap{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    .powerImgBox{
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      border:1px solid var(--bd);
+      background:#000;
+    }
+    .powerLegend{
+      display:flex;
+      flex-wrap:wrap;
+      gap: 10px;
+      align-items:center;
+    }
+    .swatch{
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      display:inline-block;
+      border:1px solid rgba(255,255,255,.2);
+      margin-right: 6px;
+    }
+
+    /* Stepper */
+    .stepper{
+      display:flex;
+      gap: 8px;
+      align-items:center;
+    }
+    .stepper .btnSmall{ width: 44px; }
+    .stepperVal{
+      flex: 1 1 auto;
+      text-align:center;
+      font-weight: 900;
+      border:1px solid var(--bd);
+      background:#fff;
+      padding: 10px 10px;
+      border-radius: 12px;
+      min-width: 84px;
+    }
+  </style>
 </head>
 
 <body>
-
-<h1>Poker Stack Logger <span style="color:#666;font-size:12px">v'25/12/29</span></h1>
-
-<div class="card">
-  <label>Chips</label>
-  <input id="chips" type="number">
-  <div id="chipErr" class="err"></div>
-
-  <label style="margin-top:8px">Initial</label>
-  <input id="initial" type="number" value="10000">
-
-  <label style="margin-top:8px">飛んだ回数</label>
-  <input id="busted" type="number" value="0">
-
-  <label style="margin-top:8px">SB / BB / Ante</label>
-  <div style="display:flex;gap:6px">
-    <input id="sb" type="number" value="50">
-    <input id="bb" type="number" value="100">
-    <input id="ante" type="number" value="0">
+  <div class="appTitle">
+    <h1>Poker Stack Logger</h1>
+    <div class="ver">v'25/12/29</div>
   </div>
 
-  <label style="margin-top:8px">後ろの人数</label>
-  <input id="behind" type="number" value="7">
-
-  <div class="big" id="powerView" style="margin-top:10px">Power：-</div>
-</div>
-
-<div class="card">
-  <h2 style="font-size:14px;margin:0 0 6px">パワーナンバー表</h2>
-  <div class="hint">Power以上のセルをハイライト</div>
-  <div style="overflow:auto;margin-top:8px">
-    <table id="powerTable"></table>
+  <div class="tabs">
+    <div class="tabbar" id="tabbar">
+      <button class="tabbtn active" data-tab="0">ゲーム情報</button>
+      <button class="tabbtn" data-tab="1">入力</button>
+      <button class="tabbtn" data-tab="2">グラフ</button>
+      <button class="tabbtn" data-tab="3">ログ</button>
+      <button class="tabbtn" data-tab="4">パワー</button>
+    </div>
   </div>
-</div>
 
-<div class="toast" id="toast"></div>
+  <div class="pagesWrap" id="pagesWrap">
+    <div class="pages" id="pages">
+
+      <!-- 0: Game info -->
+      <section class="page">
+        <div class="card">
+          <div class="row" style="justify-content:space-between; align-items:center;">
+            <div>
+              <div class="hint">現在Chips</div>
+              <div class="big mono" id="chipsBig">0</div>
+            </div>
+            <div>
+              <div class="metricLine">
+                <div class="metric">Dif Chips：<b class="mono" id="difChips">-</b></div>
+                <div class="metric">M値：<b class="mono" id="mValue">-</b></div>
+                <div class="metric">Power：<b class="mono" id="powerNumber">-</b></div>
+              </div>
+              <div class="hint" style="margin-top:6px;">
+                Dif = Chips − Initial − (Busted×Initial)<br>
+                M = Chips ÷ (SB + BB + Ante)
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 style="margin:0 0 10px; font-size:14px;">ゲーム情報（入力頻度低）</h2>
+
+          <div class="grid2">
+            <div>
+              <label>Name（自由記述）</label>
+              <input id="name" placeholder="例）12/25 Xmasトナメ" />
+            </div>
+            <div>
+              <label>Initial Chips（初期スタック）</label>
+              <input id="initial" type="number" inputmode="numeric" min="0" step="1" />
+            </div>
+          </div>
+
+          <div style="height:10px"></div>
+
+          <label>飛んだ回数（Busted Count）</label>
+          <div class="stepper">
+            <button class="btn btnGhost btnSmall" id="bustedMinus">−</button>
+            <div class="stepperVal mono" id="bustedView">0</div>
+            <button class="btn btnGhost btnSmall" id="bustedPlus">＋</button>
+          </div>
+          <div class="hint" style="margin-top:8px;">
+            例：初期600 / 1回飛び / 現在400 → Dif = 400 − 600 − 600 = −800
+          </div>
+        </div>
+
+        <div class="card">
+          <button class="btn btnDanger" id="clearAll" style="width:100%;">全消去（ログ＋設定）</button>
+          <div class="hint" style="margin-top:8px;">
+            ※ 端末内（localStorage）に保存。全消去すると元に戻せません。必要なら先にExcelエクスポートでバックアップしてください。
+          </div>
+        </div>
+      </section>
+
+      <!-- 1: Input -->
+      <section class="page">
+        <div class="card">
+          <h2 style="margin:0 0 10px; font-size:14px;">入力</h2>
+
+          <div class="row">
+            <div style="flex: 1 1 60%;">
+              <label>Chips（現在）</label>
+              <!-- ★ min=0 を外して 0/負の入力も受け付ける -->
+              <input id="chips" type="number" inputmode="numeric" step="1" />
+              <div class="errLine" id="chipsError"></div>
+
+              <div class="deltaBox" id="deltaBox">
+                <div class="deltaCol" id="deltaNeg"></div>
+                <div class="deltaCol" id="deltaPos"></div>
+              </div>
+            </div>
+
+            <div style="flex: 1 1 38%;">
+              <label>メモ（変動理由）</label>
+              <textarea id="memo" placeholder="例）BTNでAQsオールイン勝ち / SBでリスチ負け など"></textarea>
+            </div>
+          </div>
+
+          <div style="height:12px"></div>
+
+          <div class="row" style="align-items:flex-start;">
+            <div style="flex:1 1 100%;">
+              <div class="row" style="align-items:center;">
+                <label style="margin:0; flex: 1 1 100%;">SB/BB/Ante（同一行固定）</label>
+              </div>
+
+              <!-- Checkboxes:直上 -->
+              <div class="row" style="gap:12px; align-items:center; margin-bottom:6px;">
+                <label style="display:flex; align-items:center; gap:8px; margin:0; font-weight:900;">
+                  <input type="checkbox" id="linkBB2SB" style="width:auto; transform: scale(1.1);">
+                  BB＝2SB
+                </label>
+                <label style="display:flex; align-items:center; gap:8px; margin:0; font-weight:900;">
+                  <input type="checkbox" id="linkAnteBB" style="width:auto; transform: scale(1.1);">
+                  Ante＝BB
+                </label>
+              </div>
+
+              <!-- Inputs: nowrap -->
+              <div class="row nowrap">
+                <div>
+                  <label>SB</label>
+                  <input id="sb" type="number" inputmode="numeric" min="0" step="1" />
+                </div>
+                <div>
+                  <label>BB</label>
+                  <input id="bb" type="number" inputmode="numeric" min="1" step="1" />
+                </div>
+                <div>
+                  <label>Ante</label>
+                  <input id="ante" type="number" inputmode="numeric" min="0" step="1" />
+                </div>
+              </div>
+
+              <div class="hint" style="margin-top:8px;">
+                BB＝2SB / Ante＝BB をONにすると、連動する入力欄はグレーアウトします。
+              </div>
+            </div>
+          </div>
+
+          <div style="height:12px"></div>
+
+          <div class="row">
+            <button class="btn btnPrimary" id="record" style="flex:1;">記録（ログ追加）</button>
+            <button class="btn btnGhost" id="undo" style="flex:1;">直近ログを削除</button>
+          </div>
+
+          <div class="hint" style="margin-top:8px;">
+            記録すると、グラフ・ログに反映されます（下部に「保存しました」表示）。
+          </div>
+        </div>
+      </section>
+
+      <!-- 2: Graph -->
+      <section class="page">
+        <div class="card">
+          <div class="row" style="justify-content:space-between; align-items:center;">
+            <h2 style="margin:0; font-size:14px;">推移グラフ（Chips）</h2>
+            <span class="pill">横軸：記録時刻</span>
+          </div>
+
+          <div style="height:10px"></div>
+          <canvas id="chart"></canvas>
+
+          <div class="hint" style="margin-top:8px;">
+            初期レンジ：0〜2×Initial。<br>
+            上下に突き抜けそうになったら、最大/最小が「レンジの80%位置」になるよう自動で拡張（丸めは有効数字2桁・1/5刻み）。
+          </div>
+        </div>
+      </section>
+
+      <!-- 3: Logs -->
+      <section class="page">
+        <div class="card">
+          <div class="row" style="justify-content:space-between; align-items:center;">
+            <h2 style="margin:0; font-size:14px;">ログ一覧</h2>
+            <span class="pill">最新が上</span>
+          </div>
+
+          <div class="row" style="margin-top:10px;">
+            <button class="btn btnPrimary" id="exportXlsx" style="flex:1;">Excelにエクスポート</button>
+            <button class="btn btnGhost" id="copyCsv" style="flex:1;">CSVをコピー</button>
+          </div>
+
+          <div style="overflow:auto; max-height: 520px; margin-top:10px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Date</th>
+                  <th>Time</th>
+                  <th class="right">Chips</th>
+                  <th class="right">Initial</th>
+                  <th class="right">Busted</th>
+                  <th class="right">Dif</th>
+                  <th class="right">SB</th>
+                  <th class="right">BB</th>
+                  <th class="right">Ante</th>
+                  <th class="right">M</th>
+                  <th>Memo</th>
+                </tr>
+              </thead>
+              <tbody id="logBody"></tbody>
+            </table>
+          </div>
+
+          <div class="hint" style="margin-top:10px;">
+            ※ ブラウザのみで任意のOneDriveへ自動アップロードするには認証が必要です。必要ならPower Automate等で対応できます。
+          </div>
+        </div>
+      </section>
+
+      <!-- 4: Power -->
+      <section class="page">
+        <div class="card">
+          <h2 style="margin:0 0 10px; font-size:14px;">パワー（M×後ろ人数）</h2>
+
+          <div class="grid2">
+            <div>
+              <label>Position（8人想定）</label>
+              <select id="position">
+                <option>UTG</option>
+                <option>UTG+1</option>
+                <option>LJ</option>
+                <option>HJ</option>
+                <option>CO</option>
+                <option>BTN</option>
+                <option>SB</option>
+                <option>BB</option>
+              </select>
+              <div class="hint" style="margin-top:6px;">
+                8人想定で自動計算（必要なら下で手動調整）。
+              </div>
+            </div>
+
+            <div>
+              <label>後ろの人数（Num Behind）</label>
+              <div class="stepper">
+                <button class="btn btnGhost btnSmall" id="behindMinus">−</button>
+                <div class="stepperVal mono" id="behindView">0</div>
+                <button class="btn btnGhost btnSmall" id="behindPlus">＋</button>
+              </div>
+
+              <div class="card" style="margin:10px 0 0; box-shadow:none;">
+                <div class="hint">現在のM値</div>
+                <div class="big mono" id="mBig">-</div>
+                <div class="hint" style="margin-top:6px;">
+                  Power = M × 後ろ人数
+                </div>
+                <div class="metricLine" style="margin-top:6px;">
+                  <div class="metric">Power：<b class="mono" id="powerBig">-</b></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hint" style="margin-top:8px;">
+            下の表は「パワーナンバー（点数）」の目安。<br>
+            <b>Power（M×後ろ人数）以上</b>の点数のハンドは、オールイン候補としてハイライトします。
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="powerWrap">
+            <div class="powerLegend">
+              <span><span class="swatch" style="background: rgba(0,255,160,.35);"></span>ハイライト（点数 ≥ Power）</span>
+              <span><span class="swatch" style="background: rgba(255,255,255,.18);"></span>表のグレー領域</span>
+            </div>
+
+            <div class="powerImgBox" id="powerImgBox" style="background:#fff;">
+              <div style="overflow:auto;">
+                <table id="powerTable" style="width:100%; border-collapse:collapse;"></table>
+              </div>
+            </div>
+
+            <div class="hint">
+              ※ 表のハイライトは「点数テーブル（A〜2の13×13）」に基づき、Power以上のセルを塗ります。<br>
+              ※ グレー領域（点数3未満）は基本フォールド想定として扱います。
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <div class="toast" id="toast">保存しました</div>
+
+  <!-- Excel export libs -->
+  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
 
 <script>
-const RANKS=["A","K","Q","J","T","9","8","7","6","5","4","3","2"];
+(() => {
+  const LS_KEY = "poker_stack_logger_v20251229";
 
-/* ==== CSV完全反映（AI=80） ==== */
-const SCORE={
-A:{A:80,K:80,Q:80,J:80,T:80,"9":50,"8":37,"7":32,"6":28,"5":31,"4":27,"3":26,"2":24},
-K:{A:80,K:80,Q:80,J:75,T:66,"9":44,"8":17,"7":15,"6":14,"5":13,"4":11,"3":10,"2":9},
-Q:{A:80,K:48,Q:80,J:85,T:58,"9":38,"8":16,"7":11,"6":10,"5":8,"4":8,"3":8,"2":8},
-J:{A:50,K:31,Q:26,J:80,T:58,"9":39,"8":21,"7":12,"6":7,"5":7,"4":7,"3":7,"2":5},
-T:{A:36,K:19,Q:17,J:22,T:80,"9":43,"8":26,"7":15,"6":10,"5":9,"4":7,"3":5,"2":4},
-"9":{A:27,K:12,Q:9,J:9,T:11,"9":80,"8":31,"7":17,"6":10,"5":9,"4":3,"3":0,"2":0},
-"8":{A:24,K:10,Q:8,J:8,T:10,"9":10,"8":66,"7":19,"6":15,"5":10,"4":5,"3":0,"2":0},
-"7":{A:22,K:9,Q:6,J:5,T:6,"9":7,"8":10,"7":58,"6":15,"5":10,"4":9,"3":0,"2":0},
-"6":{A:18,K:9,Q:6,J:4,T:3,"9":3,"8":4,"7":7,"6":51,"5":11,"4":10,"3":4,"2":0},
-"5":{A:21,K:9,Q:6,J:4,T:0,"9":0,"8":0,"7":0,"6":0,"5":44,"4":11,"3":8,"2":0},
-"4":{A:18,K:8,Q:5,J:3,T:0,"9":0,"8":0,"7":0,"6":0,"5":0,"4":39,"3":6,"2":0},
-"3":{A:16,K:8,Q:5,J:3,T:0,"9":0,"8":0,"7":0,"6":0,"5":0,"4":0,"3":33,"2":0},
-"2":{A:15,K:7,Q:4,J:3,T:0,"9":0,"8":0,"7":0,"6":0,"5":0,"4":0,"3":0,"2":28}
-};
+  const RANKS = ["A","K","Q","J","T","9","8","7","6","5","4","3","2"];
 
-const el=id=>document.getElementById(id);
-const toast=msg=>{
-  const t=el("toast");
-  t.textContent=msg;
-  t.classList.add("show");
-  setTimeout(()=>t.classList.remove("show"),1500);
-};
+  // 13x13 Power Number score table (from your CSV)
+  const SCORE = {
+    "A":{"A":80, "K":80, "Q":80, "J":80, "T":80, "9":50, "8":37, "7":32, "6":28, "5":31, "4":27, "3":26, "2":24},
+    "K":{"A":80, "K":80, "Q":80, "J":75, "T":66, "9":44, "8":17, "7":15, "6":14, "5":13, "4":11, "3":10, "2":9},
+    "Q":{"A":80, "K":48, "Q":80, "J":85, "T":58, "9":38, "8":16, "7":11, "6":10, "5":8, "4":8, "3":8, "2":8},
+    "J":{"A":50, "K":31, "Q":26, "J":80, "T":58, "9":39, "8":21, "7":12, "6":7, "5":7, "4":7, "3":7, "2":5},
+    "T":{"A":36, "K":19, "Q":17, "J":22, "T":80, "9":43, "8":26, "7":15, "6":10, "5":9, "4":7, "3":5, "2":4},
+    "9":{"A":27, "K":12, "Q":9, "J":9, "T":11, "9":80, "8":31, "7":17, "6":10, "5":9, "4":3, "3":0, "2":0},
+    "8":{"A":24, "K":10, "Q":8, "J":8, "T":10, "9":10, "8":66, "7":19, "6":15, "5":10, "4":5, "3":0, "2":0},
+    "7":{"A":22, "K":9, "Q":6, "J":5, "T":6, "9":7, "8":10, "7":58, "6":15, "5":10, "4":9, "3":0, "2":0},
+    "6":{"A":18, "K":9, "Q":6, "J":4, "T":3, "9":3, "8":4, "7":7, "6":51, "5":11, "4":10, "3":4, "2":0},
+    "5":{"A":21, "K":9, "Q":6, "J":4, "T":0, "9":0, "8":0, "7":0, "6":0, "5":44, "4":11, "3":8, "2":0},
+    "4":{"A":18, "K":8, "Q":5, "J":3, "T":0, "9":0, "8":0, "7":0, "6":0, "5":0, "4":39, "3":6, "2":0},
+    "3":{"A":16, "K":8, "Q":5, "J":3, "T":0, "9":0, "8":0, "7":0, "6":0, "5":0, "4":0, "3":33, "2":0},
+    "2":{"A":15, "K":7, "Q":4, "J":3, "T":0, "9":0, "8":0, "7":0, "6":0, "5":0, "4":0, "3":0, "2":28},
+  };
 
-function render(){
-  const chips=Number(el("chips").value);
-  const ini=Number(el("initial").value)||0;
-  const b=Number(el("busted").value)||0;
-  const sb=Number(el("sb").value)||0;
-  const bb=Number(el("bb").value)||0;
-  const ante=Number(el("ante").value)||0;
-  const behind=Number(el("behind").value)||0;
+  const POSITIONS = ["UTG","UTG+1","LJ","HJ","CO","BTN","SB","BB"];
 
-  const err=el("chipErr");
-  if(Number.isFinite(chips)&&chips<=0){
-    err.textContent="Chipsが0以下です。飛んだ場合は飛んだ回数＋1してください。";
-    toast("Chipsが0以下です");
-  }else err.textContent="";
+  const el = (id) => document.getElementById(id);
 
-  const m=(sb+bb+ante)>0?chips/(sb+bb+ante):NaN;
-  const power=Number.isFinite(m)?m*behind:NaN;
-  el("powerView").textContent=Number.isFinite(power)?`Power：${power.toFixed(1)}`:"Power：-";
+  const toastEl = el("toast");
+  let toastTimer = null;
+  const toast = (msg) => {
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove("show"), 1400);
+  };
 
-  const tbl=el("powerTable");
-  let html="<tr><th class='sticky'></th>";
-  RANKS.forEach(r=>html+=`<th>${r}</th>`);
-  html+="</tr>";
+  const stateDefault = {
+    tabIndex: 0,
+    name: "",
+    chips: 10000,
+    initial: 10000,
+    busted: 0,
+    sb: 50,
+    bb: 100,
+    ante: 0,
+    memo: "",
+    linkBB2SB: true,
+    linkAnteBB: false,
 
-  for(const r of RANKS){
-    html+=`<tr><th class="sticky">${r}</th>`;
-    for(const c of RANKS){
-      const v=SCORE[r][c]||0;
-      const hl=Number.isFinite(power)&&v>=power;
-      const dark=v<3;
-      html+=`<td class="${hl?"hl":dark?"dark":""}">${v?v:""}</td>`;
+    position: "UTG",
+    behind: 7, // default UTG behind in 8-handed
+    logs: [],
+
+    // Chart range (sticky expanding)
+    chartYMin: null,
+    chartYMax: null,
+
+    // for chips error toast suppression
+    lastInvalidChips: null,
+  };
+
+  let state = load();
+
+  function load(){
+    try{
+      const raw = localStorage.getItem(LS_KEY);
+      if(!raw) return structuredClone(stateDefault);
+      const p = JSON.parse(raw);
+      if(!Array.isArray(p.logs)) p.logs = [];
+      return { ...structuredClone(stateDefault), ...p };
+    }catch{
+      return structuredClone(stateDefault);
     }
-    html+="</tr>";
   }
-  tbl.innerHTML=html;
-}
+  function save(){ localStorage.setItem(LS_KEY, JSON.stringify(state)); }
 
-["chips","initial","busted","sb","bb","ante","behind"]
-.forEach(id=>el(id).addEventListener("input",render));
+  // Tabs + swipe
+  const pages = el("pages");
+  const pagesWrap = el("pagesWrap");
+  const tabBtns = Array.from(document.querySelectorAll(".tabbtn"));
 
-render();
+  function setTab(i, {silent=false} = {}){
+    const max = 4;
+    const idx = Math.max(0, Math.min(max, i));
+    state.tabIndex = idx;
+    pages.style.transform = `translateX(${-idx*20}%)`;
+    tabBtns.forEach(b => b.classList.toggle("active", Number(b.dataset.tab) === idx));
+    if(!silent) save();
+  }
+
+  tabBtns.forEach(b => {
+    b.addEventListener("click", () => setTab(Number(b.dataset.tab)));
+  });
+
+  // Swipe gesture (horizontal)
+  let startX=0, startY=0, dragging=false, baseTranslate=0;
+  pagesWrap.addEventListener("touchstart", (e) => {
+    if(!e.touches || e.touches.length!==1) return;
+    const t = e.touches[0];
+    startX = t.clientX;
+    startY = t.clientY;
+    dragging = true;
+    baseTranslate = -state.tabIndex*20;
+  }, {passive:true});
+
+  pagesWrap.addEventListener("touchmove", (e) => {
+    if(!dragging || !e.touches || e.touches.length!==1) return;
+    const t = e.touches[0];
+    const dx = t.clientX - startX;
+    const dy = t.clientY - startY;
+
+    // vertical scroll intent -> ignore
+    if(Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 8) return;
+
+    // move pages without transition
+    pages.style.transition = "none";
+    const w = pagesWrap.getBoundingClientRect().width || 1;
+    const pct = (dx / w) * 100;
+    const cur = baseTranslate + pct;
+    pages.style.transform = `translateX(${cur}%)`;
+  }, {passive:true});
+
+  pagesWrap.addEventListener("touchend", (e) => {
+    if(!dragging) return;
+    dragging = false;
+    pages.style.transition = "";
+    const endX = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0].clientX : startX;
+    const dx = endX - startX;
+    const w = pagesWrap.getBoundingClientRect().width || 1;
+    const pct = (dx / w) * 100;
+    const threshold = 14;
+
+    if(pct > threshold) setTab(state.tabIndex - 1);
+    else if(pct < -threshold) setTab(state.tabIndex + 1);
+    else setTab(state.tabIndex, {silent:true}); // snap back
+  });
+
+  // Inputs
+  const chipsBig = el("chipsBig");
+  const difChips = el("difChips");
+  const mValue = el("mValue");
+  const powerNumber = el("powerNumber");
+
+  const nameIn = el("name");
+  const initialIn = el("initial");
+
+  const bustedView = el("bustedView");
+  const bustedMinus = el("bustedMinus");
+  const bustedPlus = el("bustedPlus");
+
+  const chipsIn = el("chips");
+  const chipsErrorEl = el("chipsError");
+  const memoIn = el("memo");
+  const sbIn = el("sb");
+  const bbIn = el("bb");
+  const anteIn = el("ante");
+  const linkBB2SB = el("linkBB2SB");
+  const linkAnteBB = el("linkAnteBB");
+
+  const recordBtn = el("record");
+  const undoBtn = el("undo");
+  const clearAllBtn = el("clearAll");
+
+  // Power UI
+  const posSel = el("position");
+  const behindView = el("behindView");
+  const behindMinus = el("behindMinus");
+  const behindPlus = el("behindPlus");
+  const mBig = el("mBig");
+  const powerBig = el("powerBig");
+  const powerTable = el("powerTable");
+
+  // Deltas
+  const deltaNeg = el("deltaNeg");
+  const deltaPos = el("deltaPos");
+
+  // Chart
+  const chart = el("chart");
+  const cctx = chart.getContext("2d");
+
+  const now = () => new Date();
+  const pad2 = (n) => String(n).padStart(2, "0");
+  const fmtDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+  const fmtTime = (d) => `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+
+  const fmtInt = (n) => (Number.isFinite(n) ? Math.round(n).toLocaleString("ja-JP") : "-");
+  const fmt1 = (n) => (Number.isFinite(n) ? (Math.round(n*10)/10).toFixed(1) : "-");
+
+  function num(v, fallback=0){
+    const x = Number(v);
+    return Number.isFinite(x) ? x : fallback;
+  }
+  function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
+
+  function showChipsError(msg){
+    if(!msg){
+      chipsErrorEl.textContent = "";
+      chipsErrorEl.classList.remove("show");
+      return;
+    }
+    chipsErrorEl.textContent = msg;
+    chipsErrorEl.classList.add("show");
+  }
+
+  function isEditingIncompleteNumber(){
+    const raw = (chipsIn.value ?? "").trim();
+    // mobileで「-」だけ等の途中入力がありうるので、その間はエラー表示しない
+    return raw === "" || raw === "-" || raw === "+";
+  }
+
+  function onInvalidChipsAnnounce(val){
+    // 同じ値で連打してもトーストが出続けないよう抑制
+    if(state.lastInvalidChips === val) return;
+    state.lastInvalidChips = val;
+    toast("Chipsが0以下です。飛んだ場合は「飛んだ回数＋1」を押してください。");
+  }
+
+  function calcDif(chips, initial, busted){
+    const ini = Math.max(0, initial||0);
+    const b = Math.max(0, Math.floor(busted||0));
+    return chips - ini - (b * ini);
+  }
+  function calcM(chips, sb, bb, ante){
+    const cost = (sb||0) + (bb||0) + (ante||0);
+    return cost > 0 ? (chips / cost) : NaN;
+  }
+  function behindFromPosition(pos){
+    const idx = POSITIONS.indexOf(pos);
+    if(idx < 0) return 0;
+    // 8 max fixed: behind = (8-1) - idx
+    return Math.max(0, 7 - idx);
+  }
+
+  // Two significant digits and multiple of 1 or 5 (i.e., 10,15,20... ; 100,150,200... etc)
+  function niceCeil_2sig_1or5(x){
+    const v = Math.abs(x);
+    if(v <= 0) return 0;
+    const pow = Math.pow(10, Math.floor(Math.log10(v)) - 1); // two significant digits base
+    let scaled = Math.ceil(v / pow); // integer 10..99-ish
+    if (scaled < 10) scaled = 10;
+
+    // round up to nearest multiple of 5 (keeps 1/5 feel: 10,15,20,...,95)
+    if (scaled % 5 !== 0) scaled = scaled + (5 - (scaled % 5));
+    if (scaled > 99) {
+      // roll to next magnitude
+      return 100 * pow;
+    }
+    return scaled * pow;
+  }
+
+  // Expand chart range so that observedMax is around 80% of ymax, similarly for min.
+  function updateChartRange(observedMin, observedMax){
+    const initial = Math.max(0, state.initial || 0);
+
+    // init if null
+    if(state.chartYMin === null || state.chartYMax === null){
+      state.chartYMin = 0;
+      state.chartYMax = Math.max(1, 2 * initial);
+    }
+
+    let yMin = state.chartYMin;
+    let yMax = state.chartYMax;
+
+    // Ensure initial is meaningful
+    if(initial > 0 && yMax < 2*initial) yMax = 2*initial;
+
+    const expandUpThreshold = 0.8 * yMax;
+    if(observedMax > expandUpThreshold){
+      const target = observedMax / 0.8;
+      const rounded = niceCeil_2sig_1or5(target);
+      yMax = Math.max(yMax, rounded);
+    }
+
+    // If observedMin is negative or below current min, expand downward
+    if(observedMin < yMin){
+      const target = observedMin / 0.8; // negative
+      const roundedAbs = niceCeil_2sig_1or5(Math.abs(target));
+      yMin = -roundedAbs;
+    }
+
+    state.chartYMin = yMin;
+    state.chartYMax = yMax;
+  }
+
+  // Build delta magnitudes: base, base/10, base/100 (min 1)
+  function deltaMagnitudes(){
+    // ★ chipsが負でも桁計算が壊れないよう abs を使う
+    const cAbs = Math.max(0, Math.floor(Math.abs(state.chips || 0)));
+    const ref = cAbs > 0 ? cAbs : Math.max(1, Math.floor(state.initial || 1));
+    const digits = Math.floor(Math.log10(ref)) + 1;
+    const base = Math.pow(10, Math.max(0, digits - 1)); // 12400 -> 10000, 600 -> 100
+    const a = Math.max(1, base);
+    const b = Math.max(1, Math.floor(base / 10));
+    const d = Math.max(1, Math.floor(base / 100));
+    // ensure distinct
+    const arr = Array.from(new Set([a,b,d])).sort((x,y)=>y-x);
+    while(arr.length < 3) arr.push(1);
+    return arr.slice(0,3);
+  }
+
+  function renderDeltaButtons(){
+    const mags = deltaMagnitudes(); // [big, mid, small]
+    deltaNeg.innerHTML = "";
+    deltaPos.innerHTML = "";
+
+    mags.forEach(v => {
+      const bn = document.createElement("button");
+      bn.className = "deltaBtn neg";
+      bn.textContent = `−${fmtInt(v)}`;
+      bn.addEventListener("click", () => {
+        // ★ 0/負も許容（フリーズさせない）
+        state.chips = (state.chips||0) - v;
+        chipsIn.value = state.chips;
+        recalc();
+      });
+      deltaNeg.appendChild(bn);
+
+      const bp = document.createElement("button");
+      bp.className = "deltaBtn pos";
+      bp.textContent = `＋${fmtInt(v)}`;
+      bp.addEventListener("click", () => {
+        state.chips = (state.chips||0) + v;
+        chipsIn.value = state.chips;
+        recalc();
+      });
+      deltaPos.appendChild(bp);
+    });
+  }
+
+  function setDisabled(inputEl, isDisabled){
+    if(isDisabled){
+      inputEl.classList.add("disabled");
+      inputEl.disabled = true;
+    }else{
+      inputEl.classList.remove("disabled");
+      inputEl.disabled = false;
+    }
+  }
+
+  function applyLinking(){
+    state.linkBB2SB = !!linkBB2SB.checked;
+    state.linkAnteBB = !!linkAnteBB.checked;
+
+    // grey-out the auto fields
+    setDisabled(bbIn, state.linkBB2SB);
+    setDisabled(anteIn, state.linkAnteBB);
+
+    // enforce values
+    const sb = Math.max(0, num(sbIn.value, state.sb));
+    let bb = Math.max(1, num(bbIn.value, state.bb));
+    let ante = Math.max(0, num(anteIn.value, state.ante));
+
+    if(state.linkBB2SB){
+      bb = Math.max(1, sb * 2);
+      bbIn.value = bb;
+    }
+    if(state.linkAnteBB){
+      ante = bb;
+      anteIn.value = ante;
+    }
+
+    state.sb = sb;
+    state.bb = bb;
+    state.ante = ante;
+  }
+
+  function recalc(){
+    // pull values
+    state.name = nameIn.value ?? "";
+    state.initial = Math.max(0, num(initialIn.value, state.initial));
+
+    // ★ chipsは 0/負を許容。途中入力（"" や "-"）はエラーにしない
+    if(!isEditingIncompleteNumber()){
+      state.chips = num(chipsIn.value, state.chips);
+    }
+
+    state.memo = memoIn.value ?? "";
+    state.busted = Math.max(0, Math.floor(state.busted || 0));
+
+    applyLinking();
+
+    state.position = posSel.value;
+    // keep behind within 0..7
+    state.behind = clamp(Math.floor(state.behind||0), 0, 7);
+
+    // 0/負のときはエラー表示 + 飛びの案内
+    if(!isEditingIncompleteNumber() && Number.isFinite(state.chips) && state.chips <= 0){
+      showChipsError("エラー：Chipsは1以上で入力してください（0以下は不可）。飛んだ場合は「飛んだ回数＋1」を押してください。");
+      onInvalidChipsAnnounce(state.chips);
+    }else{
+      showChipsError("");
+      state.lastInvalidChips = null; // 次に0以下になったらまた案内できる
+    }
+
+    // metrics
+    const dif = calcDif(state.chips, state.initial, state.busted);
+    const m = calcM(state.chips, state.sb, state.bb, state.ante);
+    const power = Number.isFinite(m) ? (m * state.behind) : NaN;
+
+    chipsBig.textContent = fmtInt(state.chips);
+    difChips.textContent = fmtInt(dif);
+    mValue.textContent = Number.isFinite(m) ? fmt1(m) : "-";
+    powerNumber.textContent = Number.isFinite(power) ? fmt1(power) : "-";
+
+    bustedView.textContent = fmtInt(state.busted);
+    behindView.textContent = fmtInt(state.behind);
+
+    mBig.textContent = Number.isFinite(m) ? fmt1(m) : "-";
+    powerBig.textContent = Number.isFinite(power) ? fmt1(power) : "-";
+
+    // delta buttons (depend on chips)
+    renderDeltaButtons();
+
+    // chart
+    renderChart();
+
+    // power table
+    renderPowerTable();
+
+    save();
+  }
+
+  function recordLog(){
+    // ★ 0以下は「入力は残す」が「記録はさせない」
+    if(!Number.isFinite(state.chips) || state.chips <= 0){
+      showChipsError("エラー：Chipsは1以上で入力してください（0以下は記録できません）。飛んだ場合は「飛んだ回数＋1」を押してください。");
+      toast("0以下は記録できません（入力は残ります）");
+      onInvalidChipsAnnounce(state.chips);
+      return;
+    }
+
+    const d = now();
+    const date = fmtDate(d);
+    const time = fmtTime(d);
+
+    const chips = state.chips;
+    const initial = state.initial;
+    const busted = state.busted;
+    const sb = state.sb;
+    const bb = state.bb;
+    const ante = state.ante;
+    const memo = (state.memo || "").trim();
+
+    const dif = calcDif(chips, initial, busted);
+    const m = calcM(chips, sb, bb, ante);
+
+    state.logs.unshift({
+      name: state.name,
+      date,
+      time,
+      ts: d.getTime(),
+      chips,
+      initial,
+      busted,
+      dif,
+      sb,
+      bb,
+      ante,
+      m,
+      memo,
+    });
+    if(state.logs.length > 1200) state.logs.length = 1200;
+
+    toast(`保存しました：${date} ${time.slice(0,5)}`);
+
+    renderLogs();
+    recalc();
+  }
+
+  function undoLog(){
+    if(state.logs.length === 0) return;
+    state.logs.shift();
+    toast("直近ログを削除しました");
+    renderLogs();
+    recalc();
+  }
+
+  function renderLogs(){
+    const body = el("logBody");
+    body.innerHTML = "";
+    for(const r of state.logs){
+      const tr = document.createElement("tr");
+      const td = (txt, cls="") => {
+        const t = document.createElement("td");
+        t.textContent = txt;
+        if(cls) t.className = cls;
+        return t;
+      };
+      tr.appendChild(td(r.name ?? ""));
+      tr.appendChild(td(r.date ?? "", "mono"));
+      tr.appendChild(td(r.time ?? "", "mono"));
+      tr.appendChild(td(fmtInt(r.chips), "mono right"));
+      tr.appendChild(td(fmtInt(r.initial), "mono right"));
+      tr.appendChild(td(fmtInt(r.busted), "mono right"));
+      tr.appendChild(td(fmtInt(r.dif), "mono right"));
+      tr.appendChild(td(fmtInt(r.sb), "mono right"));
+      tr.appendChild(td(fmtInt(r.bb), "mono right"));
+      tr.appendChild(td(fmtInt(r.ante), "mono right"));
+      tr.appendChild(td(Number.isFinite(r.m) ? fmt1(r.m) : "-", "mono right"));
+      tr.appendChild(td(r.memo ?? ""));
+      body.appendChild(tr);
+    }
+  }
+
+  function resizeCanvasToDisplaySize(canvas, ctx){
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    const w = Math.max(1, Math.round(rect.width * dpr));
+    const h = Math.max(1, Math.round(rect.height * dpr));
+    if(canvas.width !== w || canvas.height !== h){
+      canvas.width = w;
+      canvas.height = h;
+      ctx.setTransform(1,0,0,1,0,0);
+    }
+  }
+
+  function renderChart(){
+    resizeCanvasToDisplaySize(chart, cctx);
+
+    const w = chart.width, h = chart.height;
+    cctx.clearRect(0,0,w,h);
+
+    // Need at least 2 points
+    if(state.logs.length < 2){
+      cctx.fillStyle = "#777";
+      const fontPx = Math.max(14, Math.round(h * 0.06));
+      cctx.font = `${fontPx}px -apple-system, system-ui, sans-serif`;
+      cctx.fillText("ログが2件以上あると表示されます", 20, 60);
+      return;
+    }
+
+    const data = [...state.logs].sort((a,b) => (a.ts||0) - (b.ts||0));
+    const chipsArr = data.map(d => d.chips);
+
+    const minTs = Math.min(...data.map(d => d.ts||0));
+    const maxTs = Math.max(...data.map(d => d.ts||0));
+    const spanTs = Math.max(1, maxTs - minTs);
+
+    const observedMin = Math.min(...chipsArr);
+    const observedMax = Math.max(...chipsArr);
+    updateChartRange(observedMin, observedMax);
+    const yMin = state.chartYMin ?? 0;
+    const yMax = state.chartYMax ?? Math.max(1, 2*(state.initial||0));
+    const spanY = Math.max(1e-9, yMax - yMin);
+
+    const pad = Math.round(Math.min(w,h) * 0.10);
+    const leftPad = pad + Math.round(pad*0.6);
+    const rightPad = pad;
+    const topPad = pad;
+    const bottomPad = pad + Math.round(pad*0.9);
+
+    const innerW = w - leftPad - rightPad;
+    const innerH = h - topPad - bottomPad;
+
+    const xAt = (ts) => leftPad + innerW * ((ts - minTs) / spanTs);
+    const yAt = (val) => topPad + innerH * (1 - ((val - yMin) / spanY));
+
+    // background
+    cctx.fillStyle = "#fafafa";
+    cctx.fillRect(0,0,w,h);
+
+    // grid + axes ticks
+    cctx.strokeStyle = "#e6e6e6";
+    cctx.lineWidth = 1;
+
+    const yTicks = 5;
+    cctx.font = `${Math.max(12, Math.round(h*0.04))}px -apple-system, system-ui, sans-serif`;
+    cctx.fillStyle = "#666";
+
+    for(let i=0;i<=yTicks;i++){
+      const t = i / yTicks;
+      const y = topPad + innerH * t;
+      cctx.beginPath();
+      cctx.moveTo(leftPad, y);
+      cctx.lineTo(w-rightPad, y);
+      cctx.stroke();
+
+      const val = yMax - spanY * t;
+      const label = fmtInt(val);
+      cctx.fillText(label, 10, y + 4);
+    }
+
+    const xTicks = 5;
+    for(let i=0;i<=xTicks;i++){
+      const t = i / xTicks;
+      const x = leftPad + innerW * t;
+      cctx.beginPath();
+      cctx.moveTo(x, topPad);
+      cctx.lineTo(x, topPad + innerH);
+      cctx.stroke();
+
+      const ts = Math.round(minTs + spanTs * t);
+      const d = new Date(ts);
+      const label = `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+      // small rotated labels
+      cctx.save();
+      cctx.translate(x, h - 10);
+      cctx.rotate(-Math.PI/6);
+      cctx.fillText(label, -18, 0);
+      cctx.restore();
+    }
+
+    // axes border
+    cctx.strokeStyle = "#cfcfcf";
+    cctx.lineWidth = 1;
+    cctx.strokeRect(leftPad, topPad, innerW, innerH);
+
+    // line
+    cctx.strokeStyle = "#111";
+    cctx.lineWidth = Math.max(2, Math.round(h*0.01));
+    cctx.beginPath();
+    cctx.moveTo(xAt(data[0].ts), yAt(data[0].chips));
+    for(let i=1;i<data.length;i++){
+      cctx.lineTo(xAt(data[i].ts), yAt(data[i].chips));
+    }
+    cctx.stroke();
+
+    // last point
+    const last = data[data.length-1];
+    cctx.fillStyle = "#111";
+    cctx.beginPath();
+    cctx.arc(xAt(last.ts), yAt(last.chips), Math.max(4, Math.round(h*0.018)), 0, Math.PI*2);
+    cctx.fill();
+
+    // title (top-left)
+    cctx.fillStyle = "#333";
+    cctx.font = `${Math.max(14, Math.round(h*0.05))}px -apple-system, system-ui, sans-serif`;
+    cctx.fillText("Chips", leftPad, topPad - 10);
+
+    // range info
+    cctx.fillStyle = "#666";
+    cctx.font = `${Math.max(12, Math.round(h*0.04))}px -apple-system, system-ui, sans-serif`;
+    const info = `Range: ${fmtInt(yMin)} 〜 ${fmtInt(yMax)}`;
+    cctx.fillText(info, leftPad + 80, topPad - 10);
+  }
+
+  // ===== Power table highlight (HTML table) =====
+  function scoreValue(val){
+    const n = Number(val);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function renderPowerTable(){
+    if(!powerTable) return;
+
+    const m = calcM(state.chips, state.sb, state.bb, state.ante);
+    const power = Number.isFinite(m) ? (m * state.behind) : NaN;
+
+    let html = "";
+
+    // header row
+    html += `<tr>
+      <th style="position:sticky; left:0; top:0; z-index:3; background:#fff;"> </th>
+      ${RANKS.map(r => `<th style="position:sticky; top:0; z-index:2; background:#fff;">${r}</th>`).join("")}
+    </tr>`;
+
+    for(let r=0;r<13;r++){
+      const rowRank = RANKS[r];
+      html += `<tr><th style="position:sticky; left:0; z-index:1; background:#fff;">${rowRank}</th>`;
+
+      for(let c=0;c<13;c++){
+        const colRank = RANKS[c];
+        const raw = (SCORE[rowRank] && SCORE[rowRank][colRank] !== undefined) ? SCORE[rowRank][colRank] : 0;
+        const sc = scoreValue(raw);
+
+        const isHL = Number.isFinite(power) && power > 0 && sc >= power;
+        const isDark = sc < 3;
+
+        const bg = isHL ? "rgba(0,255,160,.35)" : (isDark ? "rgba(0,0,0,.06)" : "#fff");
+        const cell = sc ? sc : "";
+
+        html += `<td style="background:${bg};">${cell}</td>`;
+      }
+      html += `</tr>`;
+    }
+
+    powerTable.innerHTML = html;
+  }
+
+  // CSV
+  function logsToCsv(){
+    const headers = ["Name","Date","Time","Chips","Initial","Busted","Dif","SB","BB","Ante","M","Memo"];
+    const rows = state.logs.map(r => [
+      r.name ?? "", r.date ?? "", r.time ?? "",
+      r.chips ?? "", r.initial ?? "", r.busted ?? "", r.dif ?? "",
+      r.sb ?? "", r.bb ?? "", r.ante ?? "",
+      Number.isFinite(r.m) ? (Math.round(r.m*10)/10) : "",
+      (r.memo ?? "").replace(/\r?\n/g, " ")
+    ]);
+    const esc = (v) => {
+      const s = String(v);
+      if (s.includes(",") || s.includes('"') || s.includes("\n")) return `"${s.replace(/"/g,'""')}"`;
+      return s;
+    };
+    return [headers.map(esc).join(","), ...rows.map(r => r.map(esc).join(","))].join("\n");
+  }
+  async function copyCsv(){
+    try{
+      await navigator.clipboard.writeText(logsToCsv());
+      toast("CSVをコピーしました");
+    }catch{
+      toast("コピーに失敗しました");
+    }
+  }
+
+  async function exportExcel(){
+    if(!window.ExcelJS){
+      toast("ExcelJSが読み込めません");
+      return;
+    }
+    const wb = new ExcelJS.Workbook();
+    wb.creator = "Poker Stack Logger";
+    wb.created = new Date();
+
+    const ws = wb.addWorksheet("Logs");
+    ws.columns = [
+      { header: "Name", key: "name", width: 18 },
+      { header: "Date", key: "date", width: 12 },
+      { header: "Time", key: "time", width: 10 },
+      { header: "Chips", key: "chips", width: 12 },
+      { header: "Initial", key: "initial", width: 12 },
+      { header: "Busted", key: "busted", width: 10 },
+      { header: "Dif", key: "dif", width: 12 },
+      { header: "SB", key: "sb", width: 10 },
+      { header: "BB", key: "bb", width: 10 },
+      { header: "Ante", key: "ante", width: 10 },
+      { header: "M", key: "m", width: 10 },
+      { header: "Memo", key: "memo", width: 40 },
+    ];
+    ws.getRow(1).font = { bold: true };
+    ws.views = [{ state: "frozen", ySplit: 1 }];
+
+    const rows = [...state.logs].reverse().map(r => ({
+      name: r.name ?? "", date: r.date ?? "", time: r.time ?? "",
+      chips: r.chips ?? 0, initial: r.initial ?? 0, busted: r.busted ?? 0,
+      dif: r.dif ?? 0, sb: r.sb ?? 0, bb: r.bb ?? 0, ante: r.ante ?? 0,
+      m: Number.isFinite(r.m) ? (Math.round(r.m*10)/10) : "",
+      memo: r.memo ?? "",
+    }));
+    ws.addRows(rows);
+
+    // Chart sheet (image)
+    const ws2 = wb.addWorksheet("Chart");
+    ws2.getCell("A1").value = "Chart (Chips)";
+    ws2.getCell("A1").font = { bold: true };
+    try{
+      renderChart();
+      const dataUrl = chart.toDataURL("image/png");
+      const base64 = dataUrl.split(",")[1];
+      const imageId = wb.addImage({ base64, extension: "png" });
+      ws2.addImage(imageId, { tl: { col: 0, row: 2 }, ext: { width: 1000, height: 420 } });
+    }catch{}
+
+    const filenameBase = (state.name && state.name.trim()) ? state.name.trim() : "PokerStack";
+    const safe = filenameBase.replace(/[\\/:*?"<>|]/g, "_");
+    const fileName = `${safe}_${new Date().toISOString().slice(0,19).replace(/[:T]/g,"-")}.xlsx`;
+
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    saveAs(blob, fileName);
+    toast("Excelを書き出しました");
+  }
+
+  // Bind events
+  function bind(){
+    // restore values
+    nameIn.value = state.name;
+    initialIn.value = state.initial;
+    chipsIn.value = state.chips;
+    memoIn.value = state.memo;
+
+    sbIn.value = state.sb;
+    bbIn.value = state.bb;
+    anteIn.value = state.ante;
+    linkBB2SB.checked = !!state.linkBB2SB;
+    linkAnteBB.checked = !!state.linkAnteBB;
+
+    posSel.value = state.position;
+    state.behind = clamp(Math.floor(state.behind ?? behindFromPosition(state.position)), 0, 7);
+
+    // Tabs
+    setTab(state.tabIndex, {silent:true});
+
+    // game info
+    bustedView.textContent = fmtInt(state.busted);
+
+    bustedMinus.addEventListener("click", () => {
+      state.busted = Math.max(0, (state.busted||0) - 1);
+      bustedView.textContent = fmtInt(state.busted);
+      recalc();
+    });
+    bustedPlus.addEventListener("click", () => {
+      state.busted = Math.max(0, (state.busted||0) + 1);
+      bustedView.textContent = fmtInt(state.busted);
+      recalc();
+    });
+
+    // inputs
+    nameIn.addEventListener("input", recalc);
+    initialIn.addEventListener("input", recalc);
+    chipsIn.addEventListener("input", recalc);
+    memoIn.addEventListener("input", recalc);
+
+    sbIn.addEventListener("input", recalc);
+    bbIn.addEventListener("input", recalc);
+    anteIn.addEventListener("input", recalc);
+
+    linkBB2SB.addEventListener("change", () => { applyLinking(); recalc(); });
+    linkAnteBB.addEventListener("change", () => { applyLinking(); recalc(); });
+
+    recordBtn.addEventListener("click", recordLog);
+    undoBtn.addEventListener("click", undoLog);
+
+    clearAllBtn.addEventListener("click", () => {
+      if(!confirm("すべてのログと設定を消去します。よろしいですか？")) return;
+      localStorage.removeItem(LS_KEY);
+      location.reload();
+    });
+
+    // power
+    posSel.addEventListener("change", () => {
+      state.position = posSel.value;
+      state.behind = behindFromPosition(state.position);
+      behindView.textContent = fmtInt(state.behind);
+      recalc();
+    });
+
+    behindMinus.addEventListener("click", () => {
+      state.behind = clamp((state.behind||0) - 1, 0, 7);
+      behindView.textContent = fmtInt(state.behind);
+      recalc();
+    });
+    behindPlus.addEventListener("click", () => {
+      state.behind = clamp((state.behind||0) + 1, 0, 7);
+      behindView.textContent = fmtInt(state.behind);
+      recalc();
+    });
+
+    // export
+    el("copyCsv").addEventListener("click", copyCsv);
+    el("exportXlsx").addEventListener("click", exportExcel);
+
+    // resize redraw
+    window.addEventListener("resize", () => { renderChart(); renderPowerTable(); }, {passive:true});
+
+    renderLogs();
+    recalc();
+  }
+
+  bind();
+})();
 </script>
-
 </body>
 </html>
