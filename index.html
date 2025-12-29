@@ -9,227 +9,461 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
   <style>
-    :root { --bg:#fff; --card:#fff; --bd:#e6e6e6; --muted:#666; --text:#111; --soft:#f6f6f6; }
-    body { font-family: -apple-system, system-ui, Segoe UI, Roboto, sans-serif; margin: 16px; background:var(--bg); color:var(--text); }
-    h1 { font-size: 18px; margin: 2px 0 12px; }
-    h2 { font-size: 14px; margin: 0 0 8px; color: #222; }
-    .card { border:1px solid var(--bd); border-radius: 14px; padding: 12px; margin: 12px 0; background:var(--card); }
-    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; }
-    label { font-size: 12px; color: #444; display:block; margin-bottom:4px; }
-    input, select, button, textarea { font-size: 16px; padding: 10px; border-radius: 12px; border:1px solid #cfcfcf; }
-    input { width: 160px; }
-    input.small { width: 120px; }
-    select { width: 200px; }
-    textarea { width: 100%; min-height: 72px; resize: vertical; }
-    button { border:0; cursor:pointer; }
-    .btn { padding: 12px 14px; border-radius: 12px; }
-    .btn-primary { background:#111; color:#fff; }
-    .btn-ghost { background: var(--soft); color:#111; border:1px solid var(--bd); }
-    .btn-danger { background:#ffecec; color:#111; border:1px solid #ffd0d0; }
+    :root{
+      --bg:#ffffff;
+      --card:#ffffff;
+      --bd:#e6e6e6;
+      --muted:#666;
+      --text:#111;
+      --soft:#f6f6f6;
+      --soft2:#fafafa;
+      --danger:#ffecec;
+      --dangerBd:#ffd0d0;
+      --ok:#eaffea;
+      --okBd:#c9f3c9;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      font-family:-apple-system,system-ui,Segoe UI,Roboto,sans-serif;
+      margin: 10px 12px 84px;
+      background:var(--bg);
+      color:var(--text);
+    }
+    h1{ font-size:16px; margin:2px 0 8px; }
+    h2{ font-size:14px; margin:0 0 8px; color:#222; }
+    h3{ font-size:13px; margin:0 0 8px; color:#222; }
+    .hint{ font-size:12px; color:var(--muted); line-height:1.45; }
+    .mono{ font-variant-numeric: tabular-nums; font-feature-settings:"tnum"; }
 
-    .metrics { display:flex; gap:14px; flex-wrap:wrap; align-items:center; }
-    .metric { font-size: 13px; color:#333; }
-    .metric b { font-size: 20px; font-variant-numeric: tabular-nums; font-feature-settings:"tnum"; }
-    .big { font-size: 34px; font-weight: 850; letter-spacing: 0.4px; font-variant-numeric: tabular-nums; font-feature-settings:"tnum"; }
-    .mono { font-variant-numeric: tabular-nums; font-feature-settings:"tnum"; }
-    .hint { font-size: 12px; color: var(--muted); line-height: 1.45; }
+    .card{
+      border:1px solid var(--bd);
+      border-radius: 14px;
+      padding: 12px;
+      background:var(--card);
+      margin: 10px 0;
+    }
+    .row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:flex-end;
+    }
+    label{
+      font-size:12px;
+      color:#444;
+      display:block;
+      margin-bottom:4px;
+    }
+    input, select, button, textarea{
+      font-size:16px;
+      padding: 10px;
+      border-radius: 12px;
+      border:1px solid #cfcfcf;
+      background:#fff;
+    }
+    input{ width: 160px; }
+    input.small{ width: 120px; }
+    select{ width: 200px; }
+    textarea{ width:100%; min-height:72px; resize:vertical; }
+    button{ border:0; cursor:pointer; }
+    .btn{ padding:12px 14px; border-radius:12px; }
+    .btn-primary{ background:#111; color:#fff; }
+    .btn-ghost{ background:var(--soft); color:#111; border:1px solid var(--bd); }
+    .btn-danger{ background:var(--danger); color:#111; border:1px solid var(--dangerBd); }
+    .btn-ok{ background:var(--ok); color:#111; border:1px solid var(--okBd); }
 
-    .grid2 { display:grid; grid-template-columns: 1fr; gap: 10px; }
-    @media (min-width: 720px) { .grid2 { grid-template-columns: 1fr 1fr; } }
+    .metrics{ display:flex; gap:14px; flex-wrap:wrap; align-items:center; }
+    .metric{ font-size:13px; color:#333; }
+    .metric b{ font-size:20px; }
+    .big{ font-size:34px; font-weight:850; letter-spacing:0.4px; }
 
-    /* canvasはCSSで表示サイズを決め、JSで内部解像度を合わせる（重要） */
-    canvas { width: 100%; height: 260px; border-radius: 14px; background:#fafafa; border:1px solid #eee; display:block; }
+    .grid2{ display:grid; grid-template-columns: 1fr; gap:10px; }
+    @media (min-width:720px){ .grid2{ grid-template-columns: 1fr 1fr; } }
 
-    table { width:100%; border-collapse: collapse; }
-    th, td { border-top:1px solid #eee; padding:10px 6px; font-size: 13px; vertical-align: top; }
-    th { text-align:left; color:#555; font-weight:600; position: sticky; top: 0; background: white; }
-    .pill { display:inline-block; padding: 2px 8px; border-radius: 999px; background: var(--soft); border:1px solid var(--bd); font-size: 12px; }
-    .right { text-align:right; }
+    /* Pages */
+    .pages{ position: relative; overflow:hidden; }
+    .page{ display:none; }
+    .page.active{ display:block; }
 
-    .warn { background:#fff7e6; border:1px solid #ffe1a6; padding:10px 12px; border-radius:12px; }
+    /* Swipe hint */
+    .swipeHint{
+      display:flex; justify-content:space-between; align-items:center;
+      gap:8px;
+      padding: 8px 10px;
+      border:1px solid var(--bd);
+      border-radius: 12px;
+      background: var(--soft2);
+      margin: 8px 0 10px;
+    }
+    .dotbar{ display:flex; gap:6px; align-items:center; }
+    .dot{ width:8px; height:8px; border-radius:999px; background:#ddd; }
+    .dot.on{ background:#111; }
+
+    /* Bottom tab */
+    .tabbar{
+      position: fixed;
+      left: 0; right:0; bottom:0;
+      padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
+      background: rgba(255,255,255,0.98);
+      border-top: 1px solid var(--bd);
+      display:flex;
+      gap:8px;
+      justify-content:space-between;
+      z-index: 50;
+    }
+    .tab{
+      flex:1;
+      padding: 10px 8px;
+      border-radius: 12px;
+      border:1px solid var(--bd);
+      background: var(--soft);
+      text-align:center;
+      font-size: 13px;
+    }
+    .tab.on{
+      background:#111;
+      color:#fff;
+      border-color:#111;
+    }
+
+    /* Quick buttons near Chips */
+    .quickGrid{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap:8px;
+      width: 100%;
+      max-width: 340px;
+    }
+    .qbtn{
+      padding: 10px 10px;
+      border-radius: 12px;
+      border:1px solid var(--bd);
+      background: var(--soft);
+      font-size: 14px;
+      text-align:center;
+    }
+    .qbtn.plus{ background: #f1fff1; border-color:#cfeecf; }
+    .qbtn.minus{ background: #fff1f1; border-color:#f1cfcf; }
+
+    /* checkboxes */
+    .checkline{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      margin-top: 6px;
+    }
+    .checkline label{
+      margin:0;
+      display:flex;
+      gap:6px;
+      align-items:center;
+      font-size: 13px;
+      color:#333;
+    }
+    .checkline input[type="checkbox"]{
+      width:18px; height:18px;
+      border-radius: 6px;
+    }
+
+    /* chart */
+    canvas{
+      width: 100%;
+      height: 260px;
+      border-radius: 14px;
+      background:#fafafa;
+      border:1px solid #eee;
+      display:block;
+    }
+
+    table{ width:100%; border-collapse: collapse; }
+    th, td{ border-top:1px solid #eee; padding:10px 6px; font-size:13px; vertical-align: top; }
+    th{ text-align:left; color:#555; font-weight:600; position: sticky; top: 0; background: white; }
+    .right{ text-align:right; }
+
+    .pill{ display:inline-block; padding:2px 8px; border-radius:999px; background:var(--soft); border:1px solid var(--bd); font-size:12px; }
+    .warn{ background:#fff7e6; border:1px solid #ffe1a6; padding:10px 12px; border-radius:12px; }
+
+    /* Toast */
+    .toast{
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 86px;
+      background: rgba(17,17,17,0.92);
+      color:#fff;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      z-index: 80;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .18s ease;
+      max-width: 92vw;
+      text-align:center;
+      line-height: 1.35;
+    }
+    .toast.on{ opacity: 1; }
+
+    /* Power table highlight */
+    .zoneTable td, .zoneTable th{ font-size: 13px; }
+    .hl{ background: #111; color:#fff; }
   </style>
 </head>
 <body>
-  <h1>Poker Stack Logger（自分用）</h1>
+  <h1>Poker Stack Logger（v7）</h1>
 
-  <div class="card">
-    <div class="row" style="justify-content: space-between; align-items:center;">
-      <div>
-        <div class="hint">現在Chips</div>
-        <div class="big mono" id="chipsBig">0</div>
-      </div>
-      <div class="metrics">
-        <div class="metric">vsBB：<b id="vsBB" class="mono">-</b></div>
-        <div class="metric">Dif Chips：<b id="difChips" class="mono">-</b></div>
-        <div class="metric">Num Behind：<b id="behind" class="mono">-</b></div>
-        <div class="metric">M Value：<b id="mValue" class="mono">-</b></div>
-      </div>
-    </div>
-    <div class="hint" style="margin-top:8px;">
-      Dif Chips = Chips − InitialChips − (BustedCount × InitialChips) ／ M = Chips ÷ (SB + BB + BB ante)
-    </div>
+  <div class="swipeHint">
+    <div class="hint">左右スワイプで画面切替（入力 / グラフ / ログ / パワー）</div>
+    <div class="dotbar" id="dotbar"></div>
   </div>
 
-  <div class="card">
-    <h2>インプット</h2>
-
-    <div class="grid2">
-      <div class="row">
-        <div>
-          <label>Name（自由記述）</label>
-          <input id="name" placeholder="例）12/25 Xmasトナメ" />
+  <div class="pages" id="pages">
+    <!-- ===== PAGE: INPUT ===== -->
+    <section class="page" data-page="input">
+      <div class="card">
+        <div class="row" style="justify-content: space-between; align-items:center;">
+          <div>
+            <div class="hint">現在Chips</div>
+            <div class="big mono" id="chipsBig">0</div>
+          </div>
+          <div class="metrics">
+            <div class="metric">vsBB：<b id="vsBB" class="mono">-</b></div>
+            <div class="metric">Dif：<b id="difChips" class="mono">-</b></div>
+            <div class="metric">Behind：<b id="behind" class="mono">-</b></div>
+            <div class="metric">M：<b id="mValue" class="mono">-</b></div>
+          </div>
         </div>
-        <div>
-          <label>Chips（現在）</label>
-          <input id="chips" type="number" inputmode="numeric" min="0" step="1" />
-        </div>
-      </div>
-
-      <div class="row">
-        <div>
-          <label>Initial Chips（初期スタック）</label>
-          <input id="initial" class="small" type="number" inputmode="numeric" min="0" step="1" />
-        </div>
-        <div>
-          <label>飛んだ回数（Busted Count）</label>
-          <input id="busted" class="small" type="number" inputmode="numeric" min="0" step="1" />
+        <div class="hint" style="margin-top:8px;">
+          Dif = Chips − Initial − (Busted × Initial) ／ M = Chips ÷ (SB + BB + BB ante)
         </div>
       </div>
 
-      <div class="row">
-        <div>
-          <label>SB</label>
-          <input id="sb" class="small" type="number" inputmode="numeric" min="0" step="1" />
+      <div class="card">
+        <h2>入力</h2>
+
+        <div class="grid2">
+          <div class="row">
+            <div>
+              <label>Name（自由記述）</label>
+              <input id="name" placeholder="例）12/25 Xmasトナメ" />
+            </div>
+            <div>
+              <label>Chips（現在）</label>
+              <input id="chips" type="number" inputmode="numeric" min="0" step="1" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label>Initial（初期スタック）</label>
+              <input id="initial" class="small" type="number" inputmode="numeric" min="0" step="1" />
+            </div>
+            <div>
+              <label>飛んだ回数（Busted）</label>
+              <div class="row" style="gap:8px; align-items:center;">
+                <button class="btn btn-ghost" id="bustedMinus">−</button>
+                <input id="busted" class="small" type="number" inputmode="numeric" min="0" step="1" />
+                <button class="btn btn-ghost" id="bustedPlus">＋</button>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="row">
+              <div>
+                <label>SB</label>
+                <input id="sb" class="small" type="number" inputmode="numeric" min="0" step="1" />
+              </div>
+              <div>
+                <label>BB</label>
+                <input id="bb" class="small" type="number" inputmode="numeric" min="1" step="1" />
+              </div>
+              <div>
+                <label>BB ante</label>
+                <input id="bbante" class="small" type="number" inputmode="numeric" min="0" step="1" />
+              </div>
+            </div>
+
+            <div class="checkline">
+              <label><input type="checkbox" id="bb2sb" /> BB＝2SB</label>
+              <label><input type="checkbox" id="bbEqAnte" /> BB＝BB ante</label>
+              <span class="hint">（ONの間は自動入力）</span>
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label>table MAX（2〜8）</label>
+              <input id="tableMax" class="small" type="number" inputmode="numeric" min="2" max="8" step="1" />
+            </div>
+            <div>
+              <label>Position（8人MAX想定）</label>
+              <select id="position">
+                <option>UTG</option>
+                <option>UTG+1</option>
+                <option>LJ</option>
+                <option>HJ</option>
+                <option>CO</option>
+                <option>BTN</option>
+                <option>SB</option>
+                <option>BB</option>
+              </select>
+            </div>
+          </div>
         </div>
+
+        <div style="height:10px"></div>
+
         <div>
-          <label>BB</label>
-          <input id="bb" class="small" type="number" inputmode="numeric" min="1" step="1" />
+          <label>メモ（何があって変動したか）</label>
+          <textarea id="memo" placeholder="例）BTNでAQsオールイン勝ち / SBでリスチ負け など"></textarea>
         </div>
-        <div>
-          <label>BB ante</label>
-          <input id="bbante" class="small" type="number" inputmode="numeric" min="0" step="1" />
+
+        <div style="height:10px"></div>
+
+        <div class="row" style="align-items:flex-start;">
+          <div style="min-width: 260px;">
+            <label>増減ボタン（自動：Chips手入力 or 記録時に更新）</label>
+            <div class="quickGrid" id="quickGrid"></div>
+            <div class="hint" style="margin-top:6px;">
+              例：12400 → 10000/1000/100、600 → 100/10/1
+            </div>
+          </div>
+
+          <div style="flex:1"></div>
+
+          <div class="row" style="align-items:flex-end;">
+            <button class="btn btn-primary" id="record">記録（ログ追加）</button>
+            <button class="btn btn-ghost" id="undo">直近ログを削除</button>
+            <button class="btn btn-danger" id="clearAll">全消去</button>
+          </div>
+        </div>
+
+        <div class="hint" style="margin-top:8px;">
+          ※ 初期600 / 1回飛び / 現在400 → Dif = 400 − 600 − 600 = −800
         </div>
       </div>
+    </section>
 
-      <div class="row">
-        <div>
-          <label>table MAX（2〜8）</label>
-          <input id="tableMax" class="small" type="number" inputmode="numeric" min="2" max="8" step="1" />
+    <!-- ===== PAGE: CHART ===== -->
+    <section class="page" data-page="chart">
+      <div class="card">
+        <h2>推移グラフ（Chips / vsBB）</h2>
+
+        <div class="row" style="margin: 8px 0 10px;">
+          <div>
+            <label>表示：Name</label>
+            <select id="chartName" style="width: 260px;"></select>
+          </div>
+          <div>
+            <label>表示：Date</label>
+            <select id="chartDate" style="width: 200px;"></select>
+          </div>
+          <div style="flex:1"></div>
+          <button class="btn btn-ghost" id="chartReset">表示リセット</button>
+          <button class="btn btn-ghost" id="rangeReset">レンジリセット</button>
         </div>
-        <div>
-          <label>Position（8人MAX想定）</label>
-          <select id="position">
-            <option>UTG</option>
-            <option>UTG+1</option>
-            <option>LJ</option>
-            <option>HJ</option>
-            <option>CO</option>
-            <option>BTN</option>
-            <option>SB</option>
-            <option>BB</option>
-          </select>
-        </div>
-      </div>
-    </div>
 
-    <div style="height:10px"></div>
+        <canvas id="chart"></canvas>
 
-    <div>
-      <label>メモ（何があって変動したか）</label>
-      <textarea id="memo" placeholder="例）BTNでAQsオールイン勝ち / SBでリスチ負け など"></textarea>
-    </div>
-
-    <div style="height:10px"></div>
-
-    <div class="row">
-      <div>
-        <label>増減単位（Chipsに応じて候補表示）</label>
-        <select id="step"></select>
-        <div class="hint" style="margin-top:4px;">
-          ※ 候補の自動更新は「Chipsを手入力した時」または「記録」した時のみ（連打中は固定）
+        <div class="hint" style="margin-top:8px;">
+          横軸：記録時刻（時間間隔）／ Chipsレンジ：0〜2×Initialを基準に、突き抜けそうなら自動拡張（80%目安）
         </div>
       </div>
-      <button class="btn btn-ghost" id="minus">−</button>
-      <button class="btn btn-ghost" id="plus">＋</button>
+    </section>
 
-      <div style="flex:1"></div>
+    <!-- ===== PAGE: LOGS ===== -->
+    <section class="page" data-page="logs">
+      <div class="card">
+        <div class="row" style="justify-content: space-between; align-items:center;">
+          <h2 style="margin:0;">ログ一覧</h2>
+          <div class="pill">最新が上</div>
+        </div>
 
-      <button class="btn btn-primary" id="record">記録（ログ追加）</button>
-      <button class="btn btn-ghost" id="undo">直近ログを削除</button>
-      <button class="btn btn-danger" id="clearAll">全消去</button>
-    </div>
+        <div class="row" style="margin-top:8px;">
+          <button class="btn btn-ghost" id="copyCsv">CSVをコピー</button>
+          <div style="flex:1"></div>
+          <button class="btn btn-danger" id="exportXlsx">Excelにエクスポート（画像付き）</button>
+        </div>
 
-    <div class="hint" style="margin-top:8px;">
-      ※ 例：初期600 / 1回飛び / 現在400 → Dif Chips = 400 − 600 − 600 = −800
-    </div>
+        <div class="warn hint" style="margin-top:10px;">
+          OneDriveへ“任意アカウントへ自動アップロード”は認証が必要です。必要ならPower Automate等で対応できます。
+        </div>
+
+        <div style="overflow:auto; max-height: 520px; margin-top:10px;">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th class="right">Chips</th>
+                <th class="right">Initial</th>
+                <th class="right">Busted</th>
+                <th class="right">Dif</th>
+                <th class="right">SB</th>
+                <th class="right">BB</th>
+                <th class="right">Ante</th>
+                <th class="right">MAX</th>
+                <th class="right">vsBB</th>
+                <th>Pos</th>
+                <th class="right">Behind</th>
+                <th class="right">M</th>
+                <th>Memo</th>
+              </tr>
+            </thead>
+            <tbody id="logBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== PAGE: POWER ===== -->
+    <section class="page" data-page="power">
+      <div class="card">
+        <h2>パワー（Power Number）</h2>
+        <div class="hint" style="margin-bottom:10px;">
+          定義：<b>Power = M × (NumBehind + 1)</b>（このアプリ内の定義）<br>
+          ※ Mはスタック量、Behindは後ろの人数。意思決定の「余裕度」目安として使います。
+        </div>
+
+        <div class="row">
+          <div class="metric">M：<b id="pM" class="mono">-</b></div>
+          <div class="metric">Behind：<b id="pBehind" class="mono">-</b></div>
+          <div class="metric">Power：<b id="pPower" class="mono">-</b></div>
+        </div>
+
+        <div style="height:10px"></div>
+
+        <h3>Powerゾーン（目安）</h3>
+        <div class="hint" style="margin-bottom:8px;">
+          ※ 値の切り方は運用しながら調整できます（まずは分かりやすいゾーンで実装）
+        </div>
+
+        <div style="overflow:auto;">
+          <table class="zoneTable">
+            <thead>
+              <tr>
+                <th>ゾーン</th>
+                <th class="right">Power範囲</th>
+                <th>ざっくり</th>
+              </tr>
+            </thead>
+            <tbody id="zoneBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
   </div>
 
-  <div class="card">
-    <h2>推移グラフ（Chips と vsBB）</h2>
+  <div class="toast" id="toast">Saved</div>
 
-    <!-- ★追加：Name / Dateで表示切り替え -->
-    <div class="row" style="margin: 8px 0 10px;">
-      <div>
-        <label>グラフ表示：Name</label>
-        <select id="chartName" style="width: 260px;"></select>
-      </div>
-      <div>
-        <label>グラフ表示：Date</label>
-        <select id="chartDate" style="width: 200px;"></select>
-      </div>
-      <div style="flex:1"></div>
-      <button class="btn btn-ghost" id="chartReset">表示リセット</button>
-    </div>
-
-    <canvas id="chart"></canvas>
-
-    <div class="hint" style="margin-top:8px;">
-      横軸：記録時刻（時間間隔に連動）／ 左縦軸：Chips ／ 右縦軸：vsBB
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="row" style="justify-content: space-between; align-items:center;">
-      <h2 style="margin:0;">アウトプット（ログ一覧）</h2>
-      <div class="pill">最新が上</div>
-    </div>
-
-    <div class="row" style="margin-top:8px;">
-      <button class="btn btn-primary" id="exportXlsx">Excelにエクスポート（ダウンロード）</button>
-      <div style="flex:1"></div>
-      <button class="btn btn-ghost" id="copyCsv">CSVをコピー（ログ一覧）</button>
-    </div>
-
-    <div class="warn hint" style="margin-top:10px;">
-      OneDriveへ“自動アップロード”は、ブラウザだけで任意アカウントに直接保存するには認証が必要です。<br>
-      対応策：Power Automateで「このURLに送ったファイルを自分のOneDriveに保存」するフローを作れば、アップロードも可能にできます。
-    </div>
-
-    <div style="overflow:auto; max-height: 420px; margin-top:10px;">
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Date</th>
-            <th>Time</th>
-            <th class="right">Chips</th>
-            <th class="right">Initial</th>
-            <th class="right">Busted</th>
-            <th class="right">Dif Chips</th>
-            <th class="right">SB</th>
-            <th class="right">BB</th>
-            <th class="right">BB ante</th>
-            <th class="right">table MAX</th>
-            <th class="right">ratio vsBB</th>
-            <th>Position</th>
-            <th class="right">Num Behind</th>
-            <th class="right">M Value</th>
-            <th>Memo</th>
-          </tr>
-        </thead>
-        <tbody id="logBody"></tbody>
-      </table>
-    </div>
+  <div class="tabbar">
+    <div class="tab" id="tabInput">入力</div>
+    <div class="tab" id="tabChart">グラフ</div>
+    <div class="tab" id="tabLogs">ログ</div>
+    <div class="tab" id="tabPower">パワー</div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
@@ -237,9 +471,10 @@
 
 <script>
 (() => {
-  const LS_KEY = "poker_stack_logger_v6";
-
+  const LS_KEY = "poker_stack_logger_v7";
   const POSITIONS = ["UTG","UTG+1","LJ","HJ","CO","BTN","SB","BB"];
+  const PAGES = ["input","chart","logs","power"];
+
   const el = (id) => document.getElementById(id);
 
   const inputs = {
@@ -253,7 +488,8 @@
     tableMax: el("tableMax"),
     position: el("position"),
     memo: el("memo"),
-    step: el("step"),
+    bb2sb: el("bb2sb"),
+    bbEqAnte: el("bbEqAnte"),
   };
 
   const ui = {
@@ -264,28 +500,48 @@
     mValue: el("mValue"),
     logBody: el("logBody"),
     chart: el("chart"),
-    exportXlsx: el("exportXlsx"),
-    copyCsv: el("copyCsv"),
+    quickGrid: el("quickGrid"),
+    toast: el("toast"),
+    dotbar: el("dotbar"),
   };
 
   const chartUi = {
     name: el("chartName"),
     date: el("chartDate"),
     reset: el("chartReset"),
+    rangeReset: el("rangeReset"),
+  };
+
+  const powerUi = {
+    pM: el("pM"),
+    pBehind: el("pBehind"),
+    pPower: el("pPower"),
+    zoneBody: el("zoneBody"),
   };
 
   const btn = {
-    plus: el("plus"),
-    minus: el("minus"),
     record: el("record"),
     undo: el("undo"),
     clearAll: el("clearAll"),
+    copyCsv: el("copyCsv"),
+    exportXlsx: el("exportXlsx"),
+    bustedMinus: el("bustedMinus"),
+    bustedPlus: el("bustedPlus"),
   };
 
+  const tabs = {
+    input: el("tabInput"),
+    chart: el("tabChart"),
+    logs: el("tabLogs"),
+    power: el("tabPower"),
+  };
+
+  const pagesEl = el("pages");
+  const pageEls = Array.from(document.querySelectorAll(".page"));
   const ctx = ui.chart.getContext("2d");
 
-  const now = () => new Date();
   const pad2 = (n) => String(n).padStart(2, "0");
+  const now = () => new Date();
   const fmtDate = (d) => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
   const fmtTime = (d) => `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
 
@@ -293,6 +549,7 @@
   const fmt1 = (n) => (Number.isFinite(n) ? (Math.round(n*10)/10).toFixed(1) : "-");
 
   const defaultState = {
+    // current inputs
     name: "",
     chips: 10000,
     initial: 10000,
@@ -303,189 +560,672 @@
     tableMax: 8,
     position: "UTG",
     memo: "",
-    step: 100,
-    stepOptions: [10,20,50,100,200,500],
+    bb2sb: false,
+    bbEqAnte: false,
+
+    // quick buttons freeze
+    quickSteps: [10000, 1000, 100],
+    quickFrozen: true, // freeze during button presses; refresh on manual chips edit or record
+
+    // chart filter
     chartFilter: { name: "__ALL__", date: "__ALL__" },
-    logs: []
+
+    // adaptive chart range (per filter key)
+    chartRanges: {}, // key -> {min,max}
+
+    // logs
+    logs: [],
+
+    // UI
+    activePage: "input",
   };
 
   let state = load();
 
   function load() {
-    try {
+    try{
       const raw = localStorage.getItem(LS_KEY);
       if (!raw) return structuredClone(defaultState);
-      const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed.logs)) parsed.logs = [];
-      if (!Array.isArray(parsed.stepOptions) || parsed.stepOptions.length === 0) parsed.stepOptions = structuredClone(defaultState.stepOptions);
-      if (!parsed.chartFilter) parsed.chartFilter = { name:"__ALL__", date:"__ALL__" };
-      if (typeof parsed.chartFilter.name !== "string") parsed.chartFilter.name = "__ALL__";
-      if (typeof parsed.chartFilter.date !== "string") parsed.chartFilter.date = "__ALL__";
-      return { ...structuredClone(defaultState), ...parsed };
-    } catch {
+      const s = JSON.parse(raw);
+      if (!Array.isArray(s.logs)) s.logs = [];
+      if (!s.chartFilter) s.chartFilter = { name:"__ALL__", date:"__ALL__" };
+      if (!s.chartRanges || typeof s.chartRanges !== "object") s.chartRanges = {};
+      if (!Array.isArray(s.quickSteps) || s.quickSteps.length !== 3) s.quickSteps = structuredClone(defaultState.quickSteps);
+      if (typeof s.quickFrozen !== "boolean") s.quickFrozen = true;
+      if (!s.activePage || !PAGES.includes(s.activePage)) s.activePage = "input";
+      return { ...structuredClone(defaultState), ...s };
+    } catch{
       return structuredClone(defaultState);
     }
   }
 
-  function save() { localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+  function save(){ localStorage.setItem(LS_KEY, JSON.stringify(state)); }
 
-  function numVal(input, fallback=0) {
+  function numVal(input, fallback=0){
     const v = Number(input.value);
     return Number.isFinite(v) ? v : fallback;
   }
-  function clamp(n, min, max) { return Math.min(max, Math.max(min, n)); }
+  function clamp(n,min,max){ return Math.min(max, Math.max(min,n)); }
 
-  function calcVsBB(chips, bb) { return (bb > 0) ? (chips / bb) : NaN; }
-  function calcDif(chips, initial, bustedCount) {
-    const ini = Math.max(0, initial || 0);
-    const bust = Math.max(0, Math.floor(bustedCount || 0));
-    return chips - ini - (bust * ini);
+  function calcVsBB(chips, bb){ return (bb>0) ? (chips/bb) : NaN; }
+  function calcDif(chips, initial, busted){
+    const ini = Math.max(0, initial||0);
+    const b = Math.max(0, Math.floor(busted||0));
+    return chips - ini - (b*ini);
   }
-  function calcBehind(position, tableMax) {
+  function calcBehind(position, tableMax){
     const idx = POSITIONS.indexOf(position);
-    if (idx < 0) return NaN;
-    const tm = clamp(Math.round(tableMax || 0), 2, 8);
-    return Math.max(0, (tm - 1) - idx);
+    if (idx<0) return NaN;
+    const tm = clamp(Math.round(tableMax||0),2,8);
+    return Math.max(0, (tm-1)-idx);
   }
-  function calcM(chips, sb, bb, bbante) {
-    const cost = (sb||0) + (bb||0) + (bbante||0);
-    return (cost > 0) ? (chips / cost) : NaN;
-  }
-
-  // chipsに応じた6候補（1/2/5系列）
-  function buildStepOptions(chips) {
-    const c = Math.max(0, Math.floor(chips || 0));
-    if (c <= 0) return [1,2,5,10,20,50];
-
-    const target = Math.max(1, Math.floor(c * 0.05)); // 5%目安
-    const pow = Math.pow(10, Math.floor(Math.log10(target)));
-    const mant = target / pow;
-
-    let base;
-    if (mant < 1.5) base = 1;
-    else if (mant < 3.5) base = 2;
-    else base = 5;
-
-    const step0 = base * pow;
-    const seq = [step0/5, step0/2, step0, step0*2, step0*5, step0*10].map(x => Math.max(1, Math.round(x)));
-    const uniq = Array.from(new Set(seq)).sort((a,b)=>a-b);
-
-    let filtered = uniq.filter(x => x <= Math.max(50, c*2));
-    if (filtered.length < 6) filtered = uniq;
-
-    if (filtered.length > 6) {
-      const scored = filtered.map(x => ({x, s: Math.abs(x - step0)}))
-        .sort((a,b)=>a.s-b.s)
-        .slice(0, 6)
-        .map(o => o.x)
-        .sort((a,b)=>a-b);
-      return scored;
-    }
-    return filtered.slice(0,6);
+  function calcM(chips, sb, bb, ante){
+    const cost = (sb||0)+(bb||0)+(ante||0);
+    return (cost>0) ? (chips/cost) : NaN;
   }
 
-  function updateStepSelect(options, keepValue) {
-    const sel = inputs.step;
-    const prev = keepValue ?? Number(sel.value) ?? state.step;
-
-    sel.innerHTML = "";
-    for (const v of options) {
-      const opt = document.createElement("option");
-      opt.value = String(v);
-      opt.textContent = fmtInt(v);
-      sel.appendChild(opt);
-    }
-    const next = options.includes(prev) ? prev : (options[2] ?? options[0] ?? 1);
-    sel.value = String(next);
-    state.step = Number(sel.value) || next;
-    state.stepOptions = options;
+  // ===== Toast =====
+  let toastTimer = null;
+  function toast(msg){
+    ui.toast.textContent = msg;
+    ui.toast.classList.add("on");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>ui.toast.classList.remove("on"), 1200);
   }
 
-  // ★「Chips手入力」または「記録」のときだけ候補更新する
-  function refreshStepOptionsIfNeeded(keepValue) {
-    const newOpts = buildStepOptions(state.chips);
-    updateStepSelect(newOpts, keepValue ?? state.step);
-  }
-
-  // canvasを表示サイズ×DPRに合わせる（文字が潰れない/滲まない）
-  function resizeCanvasToDisplaySize(canvas, ctx) {
-    const dpr = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
-    const displayWidth = Math.max(1, Math.round(rect.width * dpr));
-    const displayHeight = Math.max(1, Math.round(rect.height * dpr));
-    if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
-      canvas.width = displayWidth;
-      canvas.height = displayHeight;
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
+  // ===== Pages / Tabs / Swipe =====
+  function renderDots(){
+    ui.dotbar.innerHTML = "";
+    for (let i=0;i<PAGES.length;i++){
+      const d = document.createElement("div");
+      d.className = "dot" + (PAGES[i]===state.activePage ? " on" : "");
+      ui.dotbar.appendChild(d);
     }
   }
+  function setActivePage(page){
+    if (!PAGES.includes(page)) return;
+    state.activePage = page;
+    pageEls.forEach(p => p.classList.toggle("active", p.dataset.page===page));
+    Object.entries(tabs).forEach(([k,el]) => el.classList.toggle("on", k===page));
+    renderDots();
+    // render on page change if needed
+    if (page==="chart") renderChart();
+    if (page==="logs") renderLogs();
+    if (page==="power") renderPower();
+    save();
+  }
 
-  // ===== グラフフィルタUI =====
-  function getUniqueNames(logs) {
+  function bindSwipe(){
+    let sx=0, sy=0, st=0, active=false;
+    pagesEl.addEventListener("touchstart", (e)=>{
+      if (e.touches.length!==1) return;
+      const t = e.touches[0];
+      sx=t.clientX; sy=t.clientY; st=Date.now(); active=true;
+    }, {passive:true});
+
+    pagesEl.addEventListener("touchend", (e)=>{
+      if (!active) return;
+      active=false;
+      const t = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0] : null;
+      if (!t) return;
+      const dx = t.clientX - sx;
+      const dy = t.clientY - sy;
+      const dt = Date.now() - st;
+
+      // vertical scroll dominates -> ignore
+      if (Math.abs(dy) > Math.abs(dx)) return;
+
+      // ignore very short
+      if (Math.abs(dx) < 50) return;
+
+      // prevent accidental edge-back gesture: if started near edges, require stronger swipe
+      const edge = 18;
+      const w = window.innerWidth || 360;
+      const nearEdge = (sx < edge) || (sx > w-edge);
+      if (nearEdge && Math.abs(dx) < 90) return;
+
+      const idx = PAGES.indexOf(state.activePage);
+      if (dx < 0 && idx < PAGES.length-1) setActivePage(PAGES[idx+1]);
+      if (dx > 0 && idx > 0) setActivePage(PAGES[idx-1]);
+    }, {passive:true});
+  }
+
+  // ===== Quick buttons (±A/±B/±C) =====
+  function compute3Steps(chips){
+    // Based on order of magnitude: 12400 -> 10000,1000,100 / 600 -> 100,10,1
+    const c = Math.max(0, Math.floor(chips||0));
+    const basePow = Math.max(0, Math.floor(Math.log10(Math.max(1,c))));
+    const A = Math.pow(10, basePow);
+    const B = Math.pow(10, Math.max(0, basePow-1));
+    const C = Math.pow(10, Math.max(0, basePow-2));
+    // If chips is small, keep down to 1
+    return [A,B,C].map(x=>Math.max(1, x));
+  }
+
+  function renderQuickButtons(){
+    ui.quickGrid.innerHTML = "";
+    const [A,B,C] = state.quickSteps;
+
+    const mk = (txt, delta, cls) => {
+      const b = document.createElement("button");
+      b.className = "qbtn " + cls;
+      b.textContent = txt;
+      b.addEventListener("click", ()=>{
+        // During taps, keep quickFrozen=true (do not recompute)
+        state.quickFrozen = true;
+        state.chips = Math.max(0, state.chips + delta);
+        inputs.chips.value = state.chips;
+        recalcAndRender(false); // do not refresh quick steps
+      });
+      return b;
+    };
+
+    ui.quickGrid.appendChild(mk(`+${fmtInt(A)}`, +A, "plus"));
+    ui.quickGrid.appendChild(mk(`+${fmtInt(B)}`, +B, "plus"));
+    ui.quickGrid.appendChild(mk(`+${fmtInt(C)}`, +C, "plus"));
+    ui.quickGrid.appendChild(mk(`-${fmtInt(A)}`, -A, "minus"));
+    ui.quickGrid.appendChild(mk(`-${fmtInt(B)}`, -B, "minus"));
+    ui.quickGrid.appendChild(mk(`-${fmtInt(C)}`, -C, "minus"));
+  }
+
+  function refreshQuickStepsFromChips(){
+    state.quickSteps = compute3Steps(state.chips);
+    state.quickFrozen = true;
+    renderQuickButtons();
+  }
+
+  // ===== Checkbox helpers for blinds =====
+  let suppressBlindSync = false;
+
+  function applyBlindLinks(changed){
+    if (suppressBlindSync) return;
+    suppressBlindSync = true;
+
+    // Priority: SB -> BB (if bb2sb on), BB -> ante (if bbEqAnte on)
+    const sb = Math.max(0, numVal(inputs.sb, state.sb));
+    let bb = Math.max(0, numVal(inputs.bb, state.bb));
+    let ante = Math.max(0, numVal(inputs.bbante, state.bbante));
+
+    if (state.bb2sb){
+      if (changed==="sb"){
+        bb = sb * 2;
+        inputs.bb.value = bb;
+      }
+      // If changed bb directly while on, we don't force sb (avoid confusion)
+    }
+
+    if (state.bbEqAnte){
+      if (changed==="bb" || (changed==="sb" && state.bb2sb)){
+        ante = bb;
+        inputs.bbante.value = ante;
+      }
+      // If changed ante directly while on, we don't force bb
+    }
+
+    suppressBlindSync = false;
+  }
+
+  // ===== Chart filter UI =====
+  function getUniqueNames(logs){
     const set = new Set();
-    for (const r of logs) {
-      const n = (r.name || "").trim();
+    for (const r of logs){
+      const n = (r.name||"").trim();
       if (n) set.add(n);
     }
     return Array.from(set).sort((a,b)=>a.localeCompare(b,"ja"));
   }
-
-  function getUniqueDatesForName(logs, name) {
+  function getUniqueDatesForName(logs, name){
     const set = new Set();
-    for (const r of logs) {
-      if (name !== "__ALL__") {
-        if ((r.name || "").trim() !== name) continue;
-      }
+    for (const r of logs){
+      if (name !== "__ALL__" && ((r.name||"").trim()!==name)) continue;
       if (r.date) set.add(r.date);
     }
     return Array.from(set).sort().reverse();
   }
-
-  function fillSelect(selectEl, items, currentValue, allLabel) {
+  function fillSelect(selectEl, items, currentValue, allLabel){
     selectEl.innerHTML = "";
-
     const optAll = document.createElement("option");
     optAll.value = "__ALL__";
     optAll.textContent = allLabel;
     selectEl.appendChild(optAll);
-
-    for (const v of items) {
+    for (const v of items){
       const opt = document.createElement("option");
       opt.value = v;
       opt.textContent = v;
       selectEl.appendChild(opt);
     }
-
     const values = new Set(["__ALL__", ...items]);
     selectEl.value = values.has(currentValue) ? currentValue : "__ALL__";
   }
-
-  function updateChartFilterUI() {
+  function updateChartFilterUI(){
     const names = getUniqueNames(state.logs);
     fillSelect(chartUi.name, names, state.chartFilter.name, "すべてのName");
 
-    // Nameが変わったら、それに合わせてDate候補を作る
-    const selectedName = chartUi.name.value;
-    state.chartFilter.name = selectedName;
-
-    const dates = getUniqueDatesForName(state.logs, selectedName);
+    state.chartFilter.name = chartUi.name.value;
+    const dates = getUniqueDatesForName(state.logs, state.chartFilter.name);
     fillSelect(chartUi.date, dates, state.chartFilter.date, "すべての日付");
 
-    // Dateも反映
     state.chartFilter.date = chartUi.date.value;
   }
-
-  function applyChartFilter(logs) {
+  function applyChartFilter(logs){
     const f = state.chartFilter;
-    return logs.filter(r => {
-      if (f.name !== "__ALL__" && ((r.name || "").trim() !== f.name)) return false;
-      if (f.date !== "__ALL__" && (r.date !== f.date)) return false;
+    return logs.filter(r=>{
+      if (f.name!=="__ALL__" && ((r.name||"").trim()!==f.name)) return false;
+      if (f.date!=="__ALL__" && (r.date!==f.date)) return false;
       return true;
     });
   }
 
-  // ===== ログ描画等 =====
-  function recalcAndRender() {
+  // ===== Chart (time axis + adaptive range) =====
+  function resizeCanvasToDisplaySize(canvas, ctx){
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    const displayWidth = Math.max(1, Math.round(rect.width * dpr));
+    const displayHeight = Math.max(1, Math.round(rect.height * dpr));
+    if (canvas.width !== displayWidth || canvas.height !== displayHeight){
+      canvas.width = displayWidth;
+      canvas.height = displayHeight;
+      ctx.setTransform(1,0,0,1,0,0);
+    }
+  }
+
+  // --- nice rounding: 1 or 5 × 10^n, roughly 2 significant digits feel ---
+  function niceStep_1or5(x){
+    // returns step in {1,5}×10^k around "2-significant-digit scale"
+    const ax = Math.abs(x);
+    if (!Number.isFinite(ax) || ax <= 0) return 1;
+    // two-sig-digit resolution => 10^(digits-2)
+    const k = Math.floor(Math.log10(ax)) - 1;
+    const base = Math.pow(10, k);
+    const ratio = ax / base; // ~ 10..99 scale
+    // pick 1×10^k or 5×10^k (i.e., base or 5*base)
+    return (ratio <= 50) ? base : (5 * base);
+  }
+
+  function niceCeil_1or5(v){
+    if (!Number.isFinite(v)) return v;
+    if (v === 0) return 0;
+    const step = niceStep_1or5(v);
+    return Math.ceil(v / step) * step;
+  }
+  function niceFloor_1or5(v){
+    if (!Number.isFinite(v)) return v;
+    if (v === 0) return 0;
+    const step = niceStep_1or5(v);
+    return Math.floor(v / step) * step;
+  }
+
+  function chartRangeKey(){
+    const n = state.chartFilter.name;
+    const d = state.chartFilter.date;
+    return `${n}__${d}`;
+  }
+
+  function getInitialForSeries(data){
+    // Prefer first (oldest) log's initial if present, else current initial.
+    if (data && data.length){
+      const oldest = [...data].sort((a,b)=>(a.ts||0)-(b.ts||0))[0];
+      if (Number.isFinite(oldest.initial) && oldest.initial > 0) return oldest.initial;
+    }
+    return Math.max(1, state.initial || 1);
+  }
+
+  function computeAdaptiveChipRange(data){
+    const ini = getInitialForSeries(data);
+    const baseMin = 0;
+    const baseMax = 2 * ini;
+
+    const chips = data.map(r=>r.chips).filter(Number.isFinite);
+    const obsMin = Math.min(...chips);
+    const obsMax = Math.max(...chips);
+
+    const key = chartRangeKey();
+    let range = state.chartRanges[key];
+
+    // If no stored range, start with base
+    if (!range || !Number.isFinite(range.min) || !Number.isFinite(range.max) || range.max <= range.min){
+      range = { min: baseMin, max: baseMax };
+    }
+
+    // Expand rule: keep observed extremes around 80% of boundary
+    const upperTrigger = 0.8 * range.max;
+    if (obsMax > upperTrigger){
+      const targetMax = obsMax / 0.8;
+      const nextMax = Math.max(range.max, niceCeil_1or5(targetMax));
+      range.max = nextMax;
+    }
+
+    // Lower side:
+    // If currently min is 0, negative values should expand below 0.
+    // Use symmetrical idea: make obsMin around 80% of lower boundary (more negative).
+    const lowerTrigger = (range.min >= 0) ? 0 : (0.8 * range.min); // e.g., min=-500 -> trigger=-400
+    if (obsMin < (range.min >= 0 ? range.min : lowerTrigger)){
+      const targetMin = obsMin / 0.8; // more negative
+      const nextMin = Math.min(range.min, niceFloor_1or5(targetMin));
+      range.min = nextMin;
+    }
+
+    // Also ensure baseMin/baseMax are respected as minimum visibility:
+    range.min = Math.min(range.min, baseMin);  // allows negative
+    range.max = Math.max(range.max, baseMax);
+
+    // Store
+    state.chartRanges[key] = range;
+    return range;
+  }
+
+  function renderChart(){
+    resizeCanvasToDisplaySize(ui.chart, ctx);
+    const w = ui.chart.width, h = ui.chart.height;
+    ctx.clearRect(0,0,w,h);
+
+    updateChartFilterUI();
+    const filtered = applyChartFilter(state.logs);
+
+    if (filtered.length < 2){
+      ctx.fillStyle = "#777";
+      const fontPx = Math.max(14, Math.round(h * 0.06));
+      ctx.font = `${fontPx}px -apple-system, system-ui, sans-serif`;
+      ctx.fillText("ログが2件以上あるとグラフが表示されます（フィルタ条件も確認）", 20, 60);
+      return;
+    }
+
+    // Old -> new
+    const data = [...filtered].sort((a,b)=>(a.ts||0)-(b.ts||0));
+    const chipsArr = data.map(x=>x.chips);
+    const vsArr = data.map(x=>x.vsBB);
+
+    const pad = Math.round(Math.min(w,h) * 0.08);
+    const topPad = Math.round(pad * 0.9);
+    const innerW = w - pad*2;
+    const innerH = h - (topPad + pad);
+
+    // time axis
+    const minTs = Math.min(...data.map(d=>d.ts||0));
+    const maxTs = Math.max(...data.map(d=>d.ts||0));
+    const spanTs = Math.max(1, maxTs - minTs);
+    const xAt = (ts)=> pad + innerW * ((ts - minTs) / spanTs);
+
+    // Adaptive chips range
+    const r = computeAdaptiveChipRange(data);
+    const minC = r.min;
+    const maxC = r.max;
+    const spanC = Math.max(1, maxC - minC);
+
+    // vsBB range (keep auto but stabilized a bit)
+    const finiteVs = vsArr.filter(Number.isFinite);
+    const vMinObs = finiteVs.length ? Math.min(...finiteVs) : 0;
+    const vMaxObs = finiteVs.length ? Math.max(...finiteVs) : 1;
+    const spanV = Math.max(0.0001, (vMaxObs - vMinObs) || 1);
+
+    const yChips = (v)=> topPad + innerH * (1 - (v - minC) / spanC);
+    const yVs = (v)=> topPad + innerH * (1 - (v - vMinObs) / spanV);
+
+    // grid
+    ctx.strokeStyle = "#e8e8e8";
+    ctx.lineWidth = 1;
+    for (let i=0;i<=4;i++){
+      const y = topPad + innerH*(i/4);
+      ctx.beginPath();
+      ctx.moveTo(pad,y);
+      ctx.lineTo(w-pad,y);
+      ctx.stroke();
+    }
+
+    const titleFont = Math.max(14, Math.round(h * 0.055));
+    const smallFont = Math.max(12, Math.round(h * 0.042));
+    ctx.fillStyle = "#555";
+    ctx.font = `${titleFont}px -apple-system, system-ui, sans-serif`;
+    ctx.fillText(`Chips（左） ${fmtInt(minC)} 〜 ${fmtInt(maxC)}`, pad, Math.round(titleFont*1.2));
+    ctx.fillText(`vsBB（右） ${fmt1(vMinObs)} 〜 ${fmt1(vMaxObs)}`, pad, Math.round(titleFont*2.35));
+
+    // chips line
+    ctx.strokeStyle = "#111";
+    ctx.lineWidth = Math.max(2, Math.round(h*0.01));
+    ctx.beginPath();
+    ctx.moveTo(xAt(data[0].ts), yChips(chipsArr[0]));
+    for (let i=1;i<data.length;i++){
+      ctx.lineTo(xAt(data[i].ts), yChips(chipsArr[i]));
+    }
+    ctx.stroke();
+
+    // vsBB dashed
+    ctx.strokeStyle = "#555";
+    ctx.lineWidth = Math.max(2, Math.round(h*0.01));
+    ctx.setLineDash([Math.round(h*0.03), Math.round(h*0.02)]);
+    ctx.beginPath();
+    ctx.moveTo(xAt(data[0].ts), yVs(vsArr[0]));
+    for (let i=1;i<data.length;i++){
+      const v = vsArr[i];
+      if (!Number.isFinite(v)) continue;
+      ctx.lineTo(xAt(data[i].ts), yVs(v));
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // last dots
+    const lastIdx = data.length-1;
+    const rr = Math.max(4, Math.round(h*0.022));
+    ctx.fillStyle = "#111";
+    ctx.beginPath();
+    ctx.arc(xAt(data[lastIdx].ts), yChips(chipsArr[lastIdx]), rr, 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.fillStyle = "#555";
+    ctx.beginPath();
+    ctx.arc(xAt(data[lastIdx].ts), yVs(vsArr[lastIdx]), rr, 0, Math.PI*2);
+    ctx.fill();
+
+    // x labels (6 ticks)
+    ctx.fillStyle = "#666";
+    ctx.font = `${smallFont}px -apple-system, system-ui, sans-serif`;
+    const tickCount = Math.min(6, data.length);
+    for (let t=0;t<tickCount;t++){
+      const targetTs = minTs + (spanTs * (t/(tickCount-1)));
+      let nearest = data[0];
+      let best = Math.abs((nearest.ts||0) - targetTs);
+      for (const row of data){
+        const d = Math.abs((row.ts||0) - targetTs);
+        if (d < best){ best = d; nearest = row; }
+      }
+      const x = xAt(nearest.ts);
+      const label = `${nearest.date} ${String(nearest.time||"").slice(0,5)}`;
+      ctx.save();
+      ctx.translate(x, h - Math.round(smallFont*0.5));
+      ctx.rotate(-Math.PI/6);
+      ctx.fillText(label, -Math.round(smallFont*5.5), 0);
+      ctx.restore();
+    }
+
+    // filter text
+    const f = state.chartFilter;
+    const filterText = `表示：${f.name==="__ALL__"?"All Name":f.name} / ${f.date==="__ALL__"?"All Date":f.date}`;
+    const tw = ctx.measureText(filterText).width;
+    ctx.fillStyle = "#666";
+    ctx.font = `${smallFont}px -apple-system, system-ui, sans-serif`;
+    ctx.fillText(filterText, w - pad - tw, topPad + innerH + Math.round(smallFont*1.2));
+  }
+
+  function resetChartRange(){
+    const key = chartRangeKey();
+    delete state.chartRanges[key];
+    toast("レンジをリセットしました");
+    renderChart();
+    save();
+  }
+
+  // ===== Logs =====
+  function renderLogs(){
+    ui.logBody.innerHTML = "";
+    for (const r of state.logs){
+      const tr = document.createElement("tr");
+      const td = (text, cls="") => {
+        const t = document.createElement("td");
+        t.textContent = text;
+        if (cls) t.className = cls;
+        return t;
+      };
+      tr.appendChild(td(r.name||""));
+      tr.appendChild(td(r.date||"", "mono"));
+      tr.appendChild(td(r.time||"", "mono"));
+      tr.appendChild(td(fmtInt(r.chips), "mono right"));
+      tr.appendChild(td(fmtInt(r.initial), "mono right"));
+      tr.appendChild(td(fmtInt(r.busted), "mono right"));
+      tr.appendChild(td(fmtInt(r.difChips), "mono right"));
+      tr.appendChild(td(fmtInt(r.sb), "mono right"));
+      tr.appendChild(td(fmtInt(r.bb), "mono right"));
+      tr.appendChild(td(fmtInt(r.bbante), "mono right"));
+      tr.appendChild(td(fmtInt(r.tableMax), "mono right"));
+      tr.appendChild(td(Number.isFinite(r.vsBB)?fmt1(r.vsBB):"-", "mono right"));
+      tr.appendChild(td(r.position||""));
+      tr.appendChild(td(fmtInt(r.behind), "mono right"));
+      tr.appendChild(td(Number.isFinite(r.mValue)?fmt1(r.mValue):"-", "mono right"));
+      tr.appendChild(td((r.memo||"").replace(/\r?\n/g," ")));
+      ui.logBody.appendChild(tr);
+    }
+  }
+
+  function logsToCsv(){
+    const headers = ["Name","Date","Time","Chips","Initial","Busted","Dif","SB","BB","Ante","MAX","vsBB","Pos","Behind","M","Memo"];
+    const rows = state.logs.map(r => [
+      r.name??"", r.date??"", r.time??"",
+      r.chips??"", r.initial??"", r.busted??"", r.difChips??"",
+      r.sb??"", r.bb??"", r.bbante??"", r.tableMax??"",
+      Number.isFinite(r.vsBB) ? (Math.round(r.vsBB*10)/10) : "",
+      r.position??"", r.behind??"",
+      Number.isFinite(r.mValue) ? (Math.round(r.mValue*10)/10) : "",
+      (r.memo??"").replace(/\r?\n/g," ")
+    ]);
+    const esc = (v) => {
+      const s = String(v);
+      if (s.includes(",") || s.includes('"') || s.includes("\n")) return `"${s.replace(/"/g,'""')}"`;
+      return s;
+    };
+    return [headers.map(esc).join(","), ...rows.map(r=>r.map(esc).join(","))].join("\n");
+  }
+
+  async function copyCsv(){
+    try{
+      await navigator.clipboard.writeText(logsToCsv());
+      toast("CSVをコピーしました");
+    }catch{
+      alert("コピーに失敗しました（ブラウザ権限をご確認ください）。");
+    }
+  }
+
+  async function exportExcel(){
+    if (!window.ExcelJS){
+      alert("Excel生成ライブラリの読み込みに失敗しました。ネット接続をご確認ください。");
+      return;
+    }
+    const wb = new ExcelJS.Workbook();
+    wb.creator = "Poker Stack Logger";
+    wb.created = new Date();
+
+    const ws = wb.addWorksheet("Logs");
+    ws.columns = [
+      { header:"Name", key:"name", width:20 },
+      { header:"Date", key:"date", width:12 },
+      { header:"Time", key:"time", width:10 },
+      { header:"Chips", key:"chips", width:12 },
+      { header:"Initial", key:"initial", width:12 },
+      { header:"Busted", key:"busted", width:10 },
+      { header:"Dif", key:"difChips", width:12 },
+      { header:"SB", key:"sb", width:10 },
+      { header:"BB", key:"bb", width:10 },
+      { header:"Ante", key:"bbante", width:10 },
+      { header:"MAX", key:"tableMax", width:8 },
+      { header:"vsBB", key:"vsBB", width:10 },
+      { header:"Pos", key:"position", width:8 },
+      { header:"Behind", key:"behind", width:10 },
+      { header:"M", key:"mValue", width:8 },
+      { header:"Memo", key:"memo", width:40 },
+    ];
+    ws.getRow(1).font = { bold:true };
+
+    const rows = [...state.logs].reverse().map(r => ({
+      name:r.name??"", date:r.date??"", time:r.time??"",
+      chips:r.chips??0, initial:r.initial??0, busted:r.busted??0, difChips:r.difChips??0,
+      sb:r.sb??0, bb:r.bb??0, bbante:r.bbante??0, tableMax:r.tableMax??0,
+      vsBB: Number.isFinite(r.vsBB) ? (Math.round(r.vsBB*10)/10) : "",
+      position:r.position??"", behind:r.behind??0,
+      mValue: Number.isFinite(r.mValue) ? (Math.round(r.mValue*10)/10) : "",
+      memo:r.memo??"",
+    }));
+    ws.addRows(rows);
+    ws.views = [{ state:"frozen", ySplit: 1 }];
+
+    const ws2 = wb.addWorksheet("Chart");
+    ws2.getCell("A1").value = "Chart image";
+    ws2.getCell("A1").font = { bold:true };
+
+    try{
+      // Ensure chart is up to date before embedding
+      const prevPage = state.activePage;
+      updateChartFilterUI();
+      renderChart();
+      // restore page doesn't matter; but keep state
+      state.activePage = prevPage;
+
+      const dataUrl = ui.chart.toDataURL("image/png");
+      const base64 = dataUrl.split(",")[1];
+      const imageId = wb.addImage({ base64, extension:"png" });
+      ws2.addImage(imageId, { tl: { col: 0, row: 2 }, ext: { width: 1000, height: 420 } });
+    }catch{
+      ws2.getCell("A3").value = "※グラフ画像の埋め込みに失敗しました。";
+    }
+
+    const filenameBase = (state.name && state.name.trim()) ? state.name.trim() : "PokerStack";
+    const safeName = filenameBase.replace(/[\\/:*?"<>|]/g, "_");
+    const fileName = `${safeName}_${new Date().toISOString().slice(0,19).replace(/[:T]/g,"-")}.xlsx`;
+
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], { type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    saveAs(blob, fileName);
+    toast("Excelを書き出しました");
+  }
+
+  // ===== Power =====
+  const ZONES = [
+    { name:"危険（Short）", min:-Infinity, max:5, note:"生存優先・押し引き寄り" },
+    { name:"注意（Low）", min:5, max:10, note:"レンジを絞って丁寧に" },
+    { name:"標準（OK）", min:10, max:20, note:"ある程度の選択肢あり" },
+    { name:"余裕（Good）", min:20, max:40, note:"プレッシャーをかけやすい" },
+    { name:"大きい（Big）", min:40, max:Infinity, note:"スタックを活かす" },
+  ];
+
+  function renderZoneTable(power){
+    powerUi.zoneBody.innerHTML = "";
+    for (const z of ZONES){
+      const tr = document.createElement("tr");
+      const inZone = (power >= z.min) && (power < z.max);
+      if (inZone) tr.className = "hl";
+
+      const td1 = document.createElement("td"); td1.textContent = z.name;
+      const td2 = document.createElement("td"); td2.className = "right mono";
+      td2.textContent = `${(z.min===-Infinity?"-∞":fmt1(z.min))} 〜 ${(z.max===Infinity?"+∞":fmt1(z.max))}`;
+      const td3 = document.createElement("td"); td3.textContent = z.note;
+
+      tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3);
+      powerUi.zoneBody.appendChild(tr);
+    }
+  }
+
+  function renderPower(){
+    const m = calcM(state.chips, state.sb, state.bb, state.bbante);
+    const behind = calcBehind(state.position, state.tableMax);
+    const power = (Number.isFinite(m) && Number.isFinite(behind)) ? (m * (behind + 1)) : NaN;
+
+    powerUi.pM.textContent = Number.isFinite(m) ? fmt1(m) : "-";
+    powerUi.pBehind.textContent = Number.isFinite(behind) ? fmtInt(behind) : "-";
+    powerUi.pPower.textContent = Number.isFinite(power) ? fmt1(power) : "-";
+
+    renderZoneTable(Number.isFinite(power) ? power : -Infinity);
+  }
+
+  // ===== Recalc & UI =====
+  function recalcAndRender(refreshQuick){
+    // read inputs
     state.name = inputs.name.value ?? "";
     state.chips = Math.max(0, numVal(inputs.chips, state.chips));
     state.initial = Math.max(0, numVal(inputs.initial, state.initial));
@@ -496,25 +1236,38 @@
     state.tableMax = clamp(Math.round(numVal(inputs.tableMax, state.tableMax)), 2, 8);
     state.position = inputs.position.value;
     state.memo = inputs.memo.value ?? "";
-    state.step = Number(inputs.step.value) || state.step;
+    state.bb2sb = !!inputs.bb2sb.checked;
+    state.bbEqAnte = !!inputs.bbEqAnte.checked;
 
+    // compute
     const vs = calcVsBB(state.chips, state.bb);
     const dif = calcDif(state.chips, state.initial, state.busted);
     const behind = calcBehind(state.position, state.tableMax);
     const m = calcM(state.chips, state.sb, state.bb, state.bbante);
 
+    // render top metrics
     ui.chipsBig.textContent = fmtInt(state.chips);
     ui.vsBB.textContent = Number.isFinite(vs) ? fmt1(vs) : "-";
     ui.difChips.textContent = Number.isFinite(dif) ? fmtInt(dif) : "-";
     ui.behind.textContent = Number.isFinite(behind) ? fmtInt(behind) : "-";
     ui.mValue.textContent = Number.isFinite(m) ? fmt1(m) : "-";
 
-    renderLogs();
-    renderChart();
+    if (refreshQuick){
+      refreshQuickStepsFromChips();
+    }else{
+      // still keep existing buttons
+      renderQuickButtons();
+    }
+
+    // update view-specific
+    if (state.activePage==="chart") renderChart();
+    if (state.activePage==="logs") renderLogs();
+    if (state.activePage==="power") renderPower();
+
     save();
   }
 
-  function recordLog() {
+  function recordLog(){
     const d = now();
     const date = fmtDate(d);
     const time = fmtTime(d);
@@ -527,7 +1280,7 @@
     const bbante = state.bbante;
     const tableMax = state.tableMax;
     const position = state.position;
-    const memo = (state.memo || "").trim();
+    const memo = (state.memo||"").trim();
 
     const vs = calcVsBB(chips, bb);
     const dif = calcDif(chips, initial, busted);
@@ -553,279 +1306,36 @@
       memo,
       ts: d.getTime()
     });
-    if (state.logs.length > 800) state.logs.length = 800;
+    if (state.logs.length > 1000) state.logs.length = 1000;
 
-    // ★ログ追加時：次の局面向けに候補更新（ただし選択値は維持）
-    refreshStepOptionsIfNeeded(state.step);
+    // Update quick steps ONLY on record (to avoid mid-tap change)
+    state.quickSteps = compute3Steps(state.chips);
+    state.quickFrozen = true;
+    renderQuickButtons();
 
-    recalcAndRender();
-  }
+    // Feedback
+    const oldText = btn.record.textContent;
+    btn.record.textContent = "記録しました ✓";
+    btn.record.classList.remove("btn-primary");
+    btn.record.classList.add("btn-ok");
+    setTimeout(()=>{
+      btn.record.textContent = oldText;
+      btn.record.classList.remove("btn-ok");
+      btn.record.classList.add("btn-primary");
+    }, 650);
 
-  function renderLogs() {
-    ui.logBody.innerHTML = "";
-    for (const r of state.logs) {
-      const tr = document.createElement("tr");
-      const td = (text, cls="") => {
-        const t = document.createElement("td");
-        t.textContent = text;
-        if (cls) t.className = cls;
-        return t;
-      };
-      tr.appendChild(td(r.name || "", ""));
-      tr.appendChild(td(r.date || "", "mono"));
-      tr.appendChild(td(r.time || "", "mono"));
-      tr.appendChild(td(fmtInt(r.chips), "mono right"));
-      tr.appendChild(td(fmtInt(r.initial), "mono right"));
-      tr.appendChild(td(fmtInt(r.busted), "mono right"));
-      tr.appendChild(td(fmtInt(r.difChips), "mono right"));
-      tr.appendChild(td(fmtInt(r.sb), "mono right"));
-      tr.appendChild(td(fmtInt(r.bb), "mono right"));
-      tr.appendChild(td(fmtInt(r.bbante), "mono right"));
-      tr.appendChild(td(fmtInt(r.tableMax), "mono right"));
-      tr.appendChild(td(Number.isFinite(r.vsBB) ? fmt1(r.vsBB) : "-", "mono right"));
-      tr.appendChild(td(r.position || "", ""));
-      tr.appendChild(td(fmtInt(r.behind), "mono right"));
-      tr.appendChild(td(Number.isFinite(r.mValue) ? fmt1(r.mValue) : "-", "mono right"));
-      tr.appendChild(td(r.memo || "", ""));
-      ui.logBody.appendChild(tr);
-    }
-  }
+    toast(`Saved ${time.slice(0,5)}（${fmtInt(chips)}）`);
 
-  // ★時間軸・フィルタ・可読性改善のrenderChart
-  function renderChart() {
-    // canvasの内部解像度を表示サイズに合わせてから描画
-    resizeCanvasToDisplaySize(ui.chart, ctx);
-
-    const w = ui.chart.width, h = ui.chart.height;
-    ctx.clearRect(0, 0, w, h);
-
-    // フィルタUI更新（ログ増減に追従）
+    // Update chart filter lists
     updateChartFilterUI();
 
-    const filtered = applyChartFilter(state.logs);
-    if (filtered.length < 2) {
-      ctx.fillStyle = "#777";
-      const fontPx = Math.max(14, Math.round(h * 0.06));
-      ctx.font = `${fontPx}px -apple-system, system-ui, sans-serif`;
-      ctx.fillText("ログが2件以上あるとグラフが表示されます（フィルタ条件も確認）", 20, 60);
-      return;
-    }
-
-    // 古い→新しい順
-    const data = [...filtered].sort((a,b) => (a.ts||0) - (b.ts||0));
-
-    const chipsArr = data.map(x => x.chips);
-    const vsArr = data.map(x => x.vsBB);
-
-    const pad = Math.round(Math.min(w,h) * 0.08);
-    const topPad = Math.round(pad * 0.9);
-    const innerW = w - pad*2;
-    const innerH = h - (topPad + pad);
-
-    const minC = Math.min(...chipsArr);
-    const maxC = Math.max(...chipsArr);
-    const spanC = Math.max(1, maxC - minC);
-
-    const finiteVs = vsArr.filter(Number.isFinite);
-    const minV = finiteVs.length ? Math.min(...finiteVs) : 0;
-    const maxV = finiteVs.length ? Math.max(...finiteVs) : 1;
-    const spanV = Math.max(0.0001, maxV - minV);
-
-    const minTs = Math.min(...data.map(d => d.ts || 0));
-    const maxTs = Math.max(...data.map(d => d.ts || 0));
-    const spanTs = Math.max(1, maxTs - minTs);
-
-    // ★時間軸でx座標
-    const xAt = (ts) => pad + innerW * ((ts - minTs) / spanTs);
-    const yChips = (v) => topPad + innerH * (1 - (v - minC) / spanC);
-    const yVs = (v) => topPad + innerH * (1 - (v - minV) / spanV);
-
-    // グリッド
-    ctx.strokeStyle = "#e8e8e8";
-    ctx.lineWidth = 1;
-    for (let i=0;i<=4;i++){
-      const y = topPad + innerH*(i/4);
-      ctx.beginPath();
-      ctx.moveTo(pad, y);
-      ctx.lineTo(w-pad, y);
-      ctx.stroke();
-    }
-
-    const titleFont = Math.max(14, Math.round(h * 0.055));
-    const smallFont = Math.max(12, Math.round(h * 0.042));
-
-    ctx.fillStyle = "#555";
-    ctx.font = `${titleFont}px -apple-system, system-ui, sans-serif`;
-    ctx.fillText(`Chips（左） min ${fmtInt(minC)} / max ${fmtInt(maxC)}`, pad, Math.round(titleFont*1.2));
-    ctx.fillText(`vsBB（右） min ${fmt1(minV)} / max ${fmt1(maxV)}`, pad, Math.round(titleFont*2.35));
-
-    // Chips実線
-    ctx.strokeStyle = "#111";
-    ctx.lineWidth = Math.max(2, Math.round(h*0.01));
-    ctx.beginPath();
-    ctx.moveTo(xAt(data[0].ts), yChips(chipsArr[0]));
-    for (let i=1;i<data.length;i++){
-      ctx.lineTo(xAt(data[i].ts), yChips(chipsArr[i]));
-    }
-    ctx.stroke();
-
-    // vsBB点線
-    ctx.strokeStyle = "#555";
-    ctx.lineWidth = Math.max(2, Math.round(h*0.01));
-    ctx.setLineDash([Math.round(h*0.03), Math.round(h*0.02)]);
-    ctx.beginPath();
-    ctx.moveTo(xAt(data[0].ts), yVs(vsArr[0]));
-    for (let i=1;i<data.length;i++){
-      const v = vsArr[i];
-      if (!Number.isFinite(v)) continue;
-      ctx.lineTo(xAt(data[i].ts), yVs(v));
-    }
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    // 最新点
-    const lastIdx = data.length - 1;
-    const r = Math.max(4, Math.round(h*0.022));
-    ctx.fillStyle = "#111";
-    ctx.beginPath();
-    ctx.arc(xAt(data[lastIdx].ts), yChips(chipsArr[lastIdx]), r, 0, Math.PI*2);
-    ctx.fill();
-
-    ctx.fillStyle = "#555";
-    ctx.beginPath();
-    ctx.arc(xAt(data[lastIdx].ts), yVs(vsArr[lastIdx]), r, 0, Math.PI*2);
-    ctx.fill();
-
-    // X軸ラベル（時間間隔に応じて6本）
-    ctx.fillStyle = "#666";
-    ctx.font = `${smallFont}px -apple-system, system-ui, sans-serif`;
-    const tickCount = Math.min(6, data.length);
-
-    for (let t=0; t<tickCount; t++){
-      const targetTs = minTs + (spanTs * (t/(tickCount-1)));
-
-      // targetTsに最も近いログを選ぶ
-      let nearest = data[0];
-      let best = Math.abs((nearest.ts||0) - targetTs);
-      for (const r of data) {
-        const d = Math.abs((r.ts||0) - targetTs);
-        if (d < best) { best = d; nearest = r; }
-      }
-
-      const x = xAt(nearest.ts);
-      const label = `${nearest.date} ${String(nearest.time||"").slice(0,5)}`;
-
-      ctx.save();
-      ctx.translate(x, h - Math.round(smallFont*0.5));
-      ctx.rotate(-Math.PI/6);
-      ctx.fillText(label, -Math.round(smallFont*5.5), 0);
-      ctx.restore();
-    }
-
-    // フィルタ表示
-    const f = state.chartFilter;
-    const filterText = `表示：${f.name === "__ALL__" ? "All Name" : f.name} / ${f.date === "__ALL__" ? "All Date" : f.date}`;
-    const tw = ctx.measureText(filterText).width;
-    ctx.fillStyle = "#666";
-    ctx.font = `${smallFont}px -apple-system, system-ui, sans-serif`;
-    ctx.fillText(filterText, w - pad - tw, topPad + innerH + Math.round(smallFont*1.2));
+    // Re-render in current page
+    recalcAndRender(false);
   }
 
-  function logsToCsv() {
-    const headers = [
-      "Name","Date","Time","Chips","Initial","Busted","Dif Chips",
-      "SB","BB","BB ante","table MAX","ratio vsBB","Position","Num Behind","M Value","Memo"
-    ];
-    const rows = state.logs.map(r => [
-      r.name ?? "", r.date ?? "", r.time ?? "",
-      r.chips ?? "", r.initial ?? "", r.busted ?? "", r.difChips ?? "",
-      r.sb ?? "", r.bb ?? "", r.bbante ?? "", r.tableMax ?? "",
-      Number.isFinite(r.vsBB) ? (Math.round(r.vsBB*10)/10) : "",
-      r.position ?? "", r.behind ?? "",
-      Number.isFinite(r.mValue) ? (Math.round(r.mValue*10)/10) : "",
-      (r.memo ?? "").replace(/\r?\n/g, " ")
-    ]);
-    const esc = (v) => {
-      const s = String(v);
-      if (s.includes(",") || s.includes('"') || s.includes("\n")) return `"${s.replace(/"/g, '""')}"`;
-      return s;
-    };
-    return [headers.map(esc).join(","), ...rows.map(r => r.map(esc).join(","))].join("\n");
-  }
-
-  async function copyCsv() {
-    try { await navigator.clipboard.writeText(logsToCsv()); alert("CSVをクリップボードにコピーしました。"); }
-    catch { alert("コピーに失敗しました（ブラウザの権限設定をご確認ください）。"); }
-  }
-
-  async function exportExcel() {
-    if (!window.ExcelJS) { alert("Excel生成ライブラリの読み込みに失敗しました。ネット接続をご確認ください。"); return; }
-    const wb = new ExcelJS.Workbook();
-    wb.creator = "Poker Stack Logger";
-    wb.created = new Date();
-
-    const ws = wb.addWorksheet("Logs");
-    ws.columns = [
-      { header: "Name", key: "name", width: 20 },
-      { header: "Date", key: "date", width: 12 },
-      { header: "Time", key: "time", width: 10 },
-      { header: "Chips", key: "chips", width: 12 },
-      { header: "Initial", key: "initial", width: 12 },
-      { header: "Busted", key: "busted", width: 10 },
-      { header: "Dif Chips", key: "difChips", width: 12 },
-      { header: "SB", key: "sb", width: 10 },
-      { header: "BB", key: "bb", width: 10 },
-      { header: "BB ante", key: "bbante", width: 10 },
-      { header: "table MAX", key: "tableMax", width: 10 },
-      { header: "ratio vsBB", key: "vsBB", width: 12 },
-      { header: "Position", key: "position", width: 10 },
-      { header: "Num Behind", key: "behind", width: 12 },
-      { header: "M Value", key: "mValue", width: 10 },
-      { header: "Memo", key: "memo", width: 40 },
-    ];
-    ws.getRow(1).font = { bold: true };
-
-    const rows = [...state.logs].reverse().map(r => ({
-      name: r.name ?? "", date: r.date ?? "", time: r.time ?? "",
-      chips: r.chips ?? 0, initial: r.initial ?? 0, busted: r.busted ?? 0, difChips: r.difChips ?? 0,
-      sb: r.sb ?? 0, bb: r.bb ?? 0, bbante: r.bbante ?? 0, tableMax: r.tableMax ?? 0,
-      vsBB: Number.isFinite(r.vsBB) ? (Math.round(r.vsBB*10)/10) : "",
-      position: r.position ?? "", behind: r.behind ?? 0,
-      mValue: Number.isFinite(r.mValue) ? (Math.round(r.mValue*10)/10) : "",
-      memo: r.memo ?? "",
-    }));
-    ws.addRows(rows);
-    ws.views = [{ state: "frozen", ySplit: 1 }];
-
-    const ws2 = wb.addWorksheet("Chart");
-    ws2.getCell("A1").value = "Chips & vsBB Chart（画像）";
-    ws2.getCell("A1").font = { bold: true };
-    try {
-      // いったん最新描画してから画像化（サイズ合わない事故を防ぐ）
-      renderChart();
-      const dataUrl = ui.chart.toDataURL("image/png");
-      const base64 = dataUrl.split(",")[1];
-      const imageId = wb.addImage({ base64, extension: "png" });
-      ws2.addImage(imageId, { tl: { col: 0, row: 2 }, ext: { width: 1000, height: 420 } });
-    } catch {
-      ws2.getCell("A3").value = "※ グラフ画像の埋め込みに失敗しました。";
-    }
-
-    const filenameBase = (state.name && state.name.trim()) ? state.name.trim() : "PokerStack";
-    const safeName = filenameBase.replace(/[\\/:*?"<>|]/g, "_");
-    const fileName = `${safeName}_${new Date().toISOString().slice(0,19).replace(/[:T]/g,"-")}.xlsx`;
-
-    const buf = await wb.xlsx.writeBuffer();
-    const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-    saveAs(blob, fileName);
-  }
-
-  function initStepOptionsOnce() {
-    const opts = buildStepOptions(state.chips);
-    updateStepSelect(opts, state.step);
-  }
-
-  function bind() {
+  // ===== Bind =====
+  function bind(){
+    // init inputs
     inputs.name.value = state.name;
     inputs.chips.value = state.chips;
     inputs.initial.value = state.initial;
@@ -836,81 +1346,144 @@
     inputs.tableMax.value = state.tableMax;
     inputs.position.value = state.position;
     inputs.memo.value = state.memo;
+    inputs.bb2sb.checked = state.bb2sb;
+    inputs.bbEqAnte.checked = state.bbEqAnte;
 
-    initStepOptionsOnce();
+    // quick buttons
+    renderQuickButtons();
 
-    // ★Chipsを「手入力」したときだけ候補更新（+/-連打中は固定）
-    inputs.chips.addEventListener("input", () => {
+    // tabs
+    tabs.input.addEventListener("click", ()=>setActivePage("input"));
+    tabs.chart.addEventListener("click", ()=>setActivePage("chart"));
+    tabs.logs.addEventListener("click", ()=>setActivePage("logs"));
+    tabs.power.addEventListener("click", ()=>setActivePage("power"));
+
+    // swipe
+    bindSwipe();
+
+    // manual chips edit => refresh quick steps
+    inputs.chips.addEventListener("input", ()=>{
       state.chips = Math.max(0, numVal(inputs.chips, state.chips));
-      refreshStepOptionsIfNeeded(state.step);
-      recalcAndRender();
+      // manual edit triggers step refresh
+      recalcAndRender(true);
     });
 
-    for (const k of ["name","initial","busted","sb","bb","bbante","tableMax","position","memo","step"]) {
-      inputs[k].addEventListener("input", recalcAndRender);
-      inputs[k].addEventListener("change", recalcAndRender);
-    }
+    // other inputs
+    inputs.name.addEventListener("input", ()=>recalcAndRender(false));
+    inputs.initial.addEventListener("input", ()=>recalcAndRender(false));
+    inputs.tableMax.addEventListener("input", ()=>recalcAndRender(false));
+    inputs.position.addEventListener("change", ()=>recalcAndRender(false));
+    inputs.memo.addEventListener("input", ()=>recalcAndRender(false));
 
-    btn.plus.addEventListener("click", () => {
-      state.step = Number(inputs.step.value) || state.step;
-      state.chips = Math.max(0, state.chips + state.step);
-      inputs.chips.value = state.chips;
-      recalcAndRender(); // 候補更新しない
+    // busted +/- (always step 1)
+    btn.bustedMinus.addEventListener("click", ()=>{
+      state.busted = Math.max(0, (state.busted||0) - 1);
+      inputs.busted.value = state.busted;
+      recalcAndRender(false);
     });
-    btn.minus.addEventListener("click", () => {
-      state.step = Number(inputs.step.value) || state.step;
-      state.chips = Math.max(0, state.chips - state.step);
-      inputs.chips.value = state.chips;
-      recalcAndRender(); // 候補更新しない
+    btn.bustedPlus.addEventListener("click", ()=>{
+      state.busted = Math.max(0, (state.busted||0) + 1);
+      inputs.busted.value = state.busted;
+      recalcAndRender(false);
+    });
+    inputs.busted.addEventListener("input", ()=>recalcAndRender(false));
+
+    // blinds input + checkboxes
+    inputs.bb2sb.addEventListener("change", ()=>{
+      state.bb2sb = inputs.bb2sb.checked;
+      applyBlindLinks("sb");
+      recalcAndRender(false);
+    });
+    inputs.bbEqAnte.addEventListener("change", ()=>{
+      state.bbEqAnte = inputs.bbEqAnte.checked;
+      applyBlindLinks("bb");
+      recalcAndRender(false);
     });
 
+    inputs.sb.addEventListener("input", ()=>{
+      state.sb = Math.max(0, numVal(inputs.sb, state.sb));
+      applyBlindLinks("sb");
+      recalcAndRender(false);
+    });
+    inputs.bb.addEventListener("input", ()=>{
+      state.bb = Math.max(0, numVal(inputs.bb, state.bb));
+      applyBlindLinks("bb");
+      recalcAndRender(false);
+    });
+    inputs.bbante.addEventListener("input", ()=>{
+      state.bbante = Math.max(0, numVal(inputs.bbante, state.bbante));
+      applyBlindLinks("ante");
+      recalcAndRender(false);
+    });
+
+    // record/undo/clear
     btn.record.addEventListener("click", recordLog);
-
-    btn.undo.addEventListener("click", () => {
-      if (state.logs.length === 0) return;
+    btn.undo.addEventListener("click", ()=>{
+      if (!state.logs.length) return;
       state.logs.shift();
-      recalcAndRender();
+      toast("直近ログを削除しました");
+      recalcAndRender(false);
     });
-
-    btn.clearAll.addEventListener("click", () => {
+    btn.clearAll.addEventListener("click", ()=>{
       if (!confirm("すべてのログと設定を消去します。よろしいですか？")) return;
-      state = structuredClone(defaultState);
-      save();
-      // 再読み込み相当
+      localStorage.removeItem(LS_KEY);
       location.reload();
     });
 
-    // ★グラフフィルタUI
-    chartUi.name.addEventListener("change", () => {
+    // chart filters
+    chartUi.name.addEventListener("change", ()=>{
       state.chartFilter.name = chartUi.name.value;
-      // Name変更時は日付候補が変わるので再構築
       updateChartFilterUI();
       renderChart();
       save();
     });
-    chartUi.date.addEventListener("change", () => {
+    chartUi.date.addEventListener("change", ()=>{
       state.chartFilter.date = chartUi.date.value;
       renderChart();
       save();
     });
-    chartUi.reset.addEventListener("click", () => {
-      state.chartFilter = { name: "__ALL__", date: "__ALL__" };
+    chartUi.reset.addEventListener("click", ()=>{
+      state.chartFilter = { name:"__ALL__", date:"__ALL__" };
       updateChartFilterUI();
       renderChart();
+      toast("表示条件をリセットしました");
       save();
     });
+    chartUi.rangeReset.addEventListener("click", resetChartRange);
 
-    // 画面回転/リサイズで文字が崩れないように再描画
-    window.addEventListener("resize", () => renderChart(), { passive: true });
+    window.addEventListener("resize", ()=>{
+      if (state.activePage==="chart") renderChart();
+    }, {passive:true});
 
-    ui.exportXlsx.addEventListener("click", exportExcel);
-    ui.copyCsv.addEventListener("click", copyCsv);
+    // csv/excel
+    btn.copyCsv.addEventListener("click", copyCsv);
+    btn.exportXlsx.addEventListener("click", exportExcel);
   }
 
-  bind();
-  // フィルタUI初期反映（保存済み状態を復元）
-  updateChartFilterUI();
-  recalcAndRender();
+  // ===== Init =====
+  function init(){
+    // dotbar
+    renderDots();
+
+    // chart filter init
+    updateChartFilterUI();
+
+    // zone table init
+    renderPower();
+
+    // bind handlers
+    bind();
+
+    // initial render all
+    recalcAndRender(true);
+    renderLogs();
+
+    // show last active page
+    setActivePage(state.activePage);
+  }
+
+  init();
+
 })();
 </script>
 </body>
